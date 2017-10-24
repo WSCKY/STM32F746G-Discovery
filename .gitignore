@@ -1,12 +1,7 @@
 *.html
 *.chm
 *.rtf
-*/iar/*
-*/Documentation/*
 *.uvguix.*
 *.uvoptx
 *.uvprojx
 *.lst
-*/MDK-ARM/*
-*/Objects/*
-*/Listings/*
