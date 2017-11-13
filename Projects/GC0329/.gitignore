@@ -1,0 +1,10 @@
+*.uvguix.*
+*.uvoptx
+*.uvprojx
+*.lst
+*.TMP
+Listings/
+Objects/
+RTE/
+DebugConfig/
+keilkill.bat
