@@ -160,11 +160,11 @@ uint8_t BSP_CAMERA_Init(uint32_t Resolution)
   BSP_CAMERA_PwrUp();
 
   /* Read ID of Camera module via I2C */
-  if(gc0329_ReadID(CAMERA_I2C_ADDRESS) == GC0329_ID)
+  if(gc0329_ReadID(GC0329_DEVICE_ADDR) == GC0329_ID)
   {
     /* Initialize the camera driver structure */
     camera_drv = &gc0329_drv;
-    CameraHwAddress = CAMERA_I2C_ADDRESS;
+    CameraHwAddress = GC0329_DEVICE_ADDR;
 
     /* DCMI Initialization */
     BSP_CAMERA_MspInit(&hDcmiHandler, NULL);
