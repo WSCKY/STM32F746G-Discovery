@@ -46,7 +46,9 @@
 /**
   * @brief  GC0329 ID
   */
-#define  GC0329_ID    0x62
+#define  GC0329_ID         0x62
+
+#define GC0329_DEVICE_ADDR 0x62
 /**
   * @brief  GC0329 Registers
   */
