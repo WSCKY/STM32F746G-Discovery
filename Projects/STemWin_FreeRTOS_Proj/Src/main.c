@@ -242,7 +242,7 @@ static void BSP_Init(void)
 	/* Configure LED1 */
 	BSP_LED_Init(LED1);
 	/* Initialize the Touch screen */
-	BSP_TS_Init(420, 272);
+	BSP_TS_Init(480, 272);
 	/* Init the STemWin GUI Library */
 	BSP_SDRAM_Init(); /* Initializes the SDRAM device */
 	__HAL_RCC_CRC_CLK_ENABLE(); /* Enable the CRC Module */
