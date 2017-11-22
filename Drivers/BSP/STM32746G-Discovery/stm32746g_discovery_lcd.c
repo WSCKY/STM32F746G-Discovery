@@ -297,40 +297,6 @@ void BSP_LCD_LayerDefaultInit(uint16_t LayerIndex, uint32_t FB_Address)
 }
 
 /**
-  * @brief  Initializes the LCD layer in RGB888 format (24 bits per pixel).
-  * @param  LayerIndex: Layer foreground or background
-  * @param  FB_Address: Layer frame buffer
-  * @retval None
-  */
-void BSP_LCD_LayerRgb888Init(uint16_t LayerIndex, uint32_t FB_Address)
-{     
-  LCD_LayerCfgTypeDef  layer_cfg;
-
-  /* Layer Init */
-  layer_cfg.WindowX0 = 0;
-  layer_cfg.WindowX1 = BSP_LCD_GetXSize();
-  layer_cfg.WindowY0 = 0;
-  layer_cfg.WindowY1 = BSP_LCD_GetYSize(); 
-  layer_cfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB888;
-  layer_cfg.FBStartAdress = FB_Address;
-  layer_cfg.Alpha = 255;
-  layer_cfg.Alpha0 = 0;
-  layer_cfg.Backcolor.Blue = 0;
-  layer_cfg.Backcolor.Green = 0;
-  layer_cfg.Backcolor.Red = 0;
-  layer_cfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_PAxCA;
-  layer_cfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_PAxCA;
-  layer_cfg.ImageWidth = BSP_LCD_GetXSize();
-  layer_cfg.ImageHeight = BSP_LCD_GetYSize();
-  
-  HAL_LTDC_ConfigLayer(&hLtdcHandler, &layer_cfg, LayerIndex); 
-
-  DrawProp[LayerIndex].BackColor = LCD_COLOR_WHITE;
-  DrawProp[LayerIndex].pFont     = &Font24;
-  DrawProp[LayerIndex].TextColor = LCD_COLOR_BLACK; 
-}
-
-/**
   * @brief  Initializes the LCD layer in RGB565 format (16 bits per pixel).
   * @param  LayerIndex: Layer foreground or background
   * @param  FB_Address: Layer frame buffer
@@ -630,12 +596,12 @@ uint32_t BSP_LCD_ReadPixel(uint16_t Xpos, uint16_t Ypos)
   if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_ARGB8888)
   {
     /* Read data value from SDRAM memory */
-    ret = *(__IO uint32_t*) (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress + (2*(Ypos*BSP_LCD_GetXSize() + Xpos)));
+    ret = *(__IO uint32_t*) (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress + (4*(Ypos*BSP_LCD_GetXSize() + Xpos)));
   }
   else if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB888)
   {
     /* Read data value from SDRAM memory */
-    ret = (*(__IO uint32_t*) (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress + (2*(Ypos*BSP_LCD_GetXSize() + Xpos))) & 0x00FFFFFF);
+    ret = (*(__IO uint32_t*) (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress + (4*(Ypos*BSP_LCD_GetXSize() + Xpos))) & 0x00FFFFFF);
   }
   else if((hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB565) || \
           (hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_ARGB4444) || \
@@ -789,10 +755,6 @@ void BSP_LCD_DrawHLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length)
   { /* RGB565 format */
     Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 2*(BSP_LCD_GetXSize()*Ypos + Xpos);
   }
-	else if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB888)
-	{ /* RGB888 format */
-    Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 3*(BSP_LCD_GetXSize()*Ypos + Xpos);
-	}
   else
   { /* ARGB8888 format */
     Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 4*(BSP_LCD_GetXSize()*Ypos + Xpos);
@@ -818,10 +780,6 @@ void BSP_LCD_DrawVLine(uint16_t Xpos, uint16_t Ypos, uint16_t Length)
   { /* RGB565 format */
     Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 2*(BSP_LCD_GetXSize()*Ypos + Xpos);
   }
-	else if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB888)
-	{ /* RGB888 format */
-    Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 3*(BSP_LCD_GetXSize()*Ypos + Xpos);
-	}
   else
   { /* ARGB8888 format */
     Xaddress = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 4*(BSP_LCD_GetXSize()*Ypos + Xpos);
@@ -1047,10 +1005,6 @@ void BSP_LCD_DrawPixel(uint16_t Xpos, uint16_t Ypos, uint32_t RGB_Code)
   { /* RGB565 format */
     *(__IO uint16_t*) (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress + (2*(Ypos*BSP_LCD_GetXSize() + Xpos))) = (uint16_t)RGB_Code;
   }
-	else if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB888)
-	{ /* RGB888 format */
-    *(__IO uint32_t*) (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress + (3*(Ypos*BSP_LCD_GetXSize() + Xpos))) = RGB_Code & 0x00FFFFFF;
-	}
   else
   { /* ARGB8888 format */
     *(__IO uint32_t*) (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress + (4*(Ypos*BSP_LCD_GetXSize() + Xpos))) = RGB_Code;
@@ -1137,10 +1091,6 @@ void BSP_LCD_FillRect(uint16_t Xpos, uint16_t Ypos, uint16_t Width, uint16_t Hei
   { /* RGB565 format */
     x_address = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 2*(BSP_LCD_GetXSize()*Ypos + Xpos);
   }
-	else if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB888)
-	{ /* RGB888 format */
-    x_address = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 3*(BSP_LCD_GetXSize()*Ypos + Xpos);
-	}
   else
   { /* ARGB8888 format */
     x_address = (hLtdcHandler.LayerCfg[ActiveLayer].FBStartAdress) + 4*(BSP_LCD_GetXSize()*Ypos + Xpos);
@@ -1622,10 +1572,6 @@ static void LL_FillBuffer(uint32_t LayerIndex, void *pDst, uint32_t xSize, uint3
   { /* RGB565 format */ 
     hDma2dHandler.Init.ColorMode    = DMA2D_RGB565;
   }
-	else if(hLtdcHandler.LayerCfg[ActiveLayer].PixelFormat == LTDC_PIXEL_FORMAT_RGB888)
-	{ /* RGB888 format */
-    hDma2dHandler.Init.ColorMode    = DMA2D_RGB888;
-	}
   else
   { /* ARGB8888 format */
     hDma2dHandler.Init.ColorMode    = DMA2D_ARGB8888;

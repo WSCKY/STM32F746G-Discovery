@@ -190,7 +190,6 @@ void     BSP_LCD_SetYSize(uint32_t imageHeightPixels);
 
 /* Functions using the LTDC controller */
 void     BSP_LCD_LayerDefaultInit(uint16_t LayerIndex, uint32_t FrameBuffer);
-void     BSP_LCD_LayerRgb888Init(uint16_t LayerIndex, uint32_t FB_Address);
 void     BSP_LCD_LayerRgb565Init(uint16_t LayerIndex, uint32_t FB_Address);
 void     BSP_LCD_SetTransparency(uint32_t LayerIndex, uint8_t Transparency);
 void     BSP_LCD_SetTransparency_NoReload(uint32_t LayerIndex, uint8_t Transparency);
