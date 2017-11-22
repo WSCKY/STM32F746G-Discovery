@@ -48,7 +48,7 @@ int main(void)
   /* Initialize the LCD */
   BSP_LCD_Init();
   /* Initialize the LCD Layers */
-  BSP_LCD_LayerRgb888Init(LTDC_ACTIVE_LAYER, LCD_FRAME_BUFFER);
+  BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FRAME_BUFFER);
 
   /* Set LCD Foreground Layer  */
   BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER);
@@ -63,11 +63,11 @@ int main(void)
   BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
 
 	if(BSP_CAMERA_Init(RESOLUTION_R480x272) == 0)
-//		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Success!");
-//	else
-//		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Failed!");
+		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Success!");
+	else
+		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Failed!");
 
-	BSP_CAMERA_ContinuousStart((uint8_t *)LCD_FB_START_ADDRESS);
+//	BSP_CAMERA_ContinuousStart((uint8_t *)LCD_FB_START_ADDRESS);
 
   while(1)
   {
