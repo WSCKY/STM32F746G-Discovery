@@ -18,6 +18,11 @@
   * LCD Frame buffer start address : starts at beginning of SDRAM
   */
 #define LCD_FRAME_BUFFER          SDRAM_DEVICE_ADDR
+__attribute__((__aligned__(4))) static uint8_t CameraImgBuffer[120 * 120 * 2] = {0};
+__attribute__((__aligned__(4))) static uint8_t LineBuffer[120] = {0};
+
+#define IMG_POS_X 180
+#define IMG_POS_Y 76
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Global extern variables ---------------------------------------------------*/
@@ -62,18 +67,70 @@ int main(void)
   /* Set the LCD Text Color */
   BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
 
-	if(BSP_CAMERA_Init(RESOLUTION_R480x272) == 0)
+	if(BSP_CAMERA_Init() == 0)
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Success!");
 	else
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Failed!");
 
-//	BSP_CAMERA_ContinuousStart((uint8_t *)LCD_FB_START_ADDRESS);
+//	BSP_CAMERA_ContinuousStart(CameraImgBuffer, 120 * 60);
+	BSP_CAMERA_SnapshotStart(CameraImgBuffer, 120 * 60);
 
   while(1)
   {
 	  BSP_LED_Toggle(LED1);
 	  HAL_Delay(200);
   }
+}
+
+static uint8_t LineNumber = 0;
+void BSP_CAMERA_LineEventCallback(void)
+{
+//	uint32_t i = 0;
+//	uint32_t Color = 0xFF000000;
+////	for(; i < 120; i ++) {
+////		LineBuffer[i + LineNumber * 120] = CameraImgBuffer[i * 2 + LineNumber * 240];
+////	}
+//	uint32_t px = 0, py = 0;
+//	for(i = 0; i < 120; i ++) {
+//		Color = 0xFF000000 + ((uint32_t)LineBuffer[i] << 16) + (uint32_t)(LineBuffer[i] << 8) + (uint32_t)LineBuffer[i];
+//		BSP_LCD_DrawPixel(IMG_POS_X + i, IMG_POS_Y + LineNumber, Color);
+//	}
+//	LineNumber ++;
+//	if(LineNumber >= 120)
+//		LineNumber = 0;
+}
+
+void BSP_CAMERA_VsyncEventCallback(void) {}
+void BSP_CAMERA_FrameEventCallback(void)
+{
+	uint32_t i = 0;
+	uint32_t Color = 0xFF000000;
+	for(LineNumber = 0; LineNumber < 120; LineNumber ++) {
+		for(i = 0; i < 120; i ++) {
+			LineBuffer[i] = CameraImgBuffer[i * 2 + LineNumber * 240];
+		}
+		for(i = 0; i < 120; i ++) {
+			Color = 0xFF000000 + ((uint32_t)LineBuffer[i] << 16) + (uint32_t)(LineBuffer[i] << 8) + (uint32_t)LineBuffer[i];
+			BSP_LCD_DrawPixel(IMG_POS_X + i, IMG_POS_Y + LineNumber, Color);
+		}
+	}
+	BSP_CAMERA_SnapshotStart(CameraImgBuffer, 120 * 60);
+}
+
+void DCMI_DMA_XferCpltCallback(DMA_HandleTypeDef *phdma)
+{
+//	uint32_t i = 0;
+//	uint32_t Color = 0xFF000000;
+//	for(LineNumber = 0; LineNumber < 120; LineNumber ++) {
+//		for(i = 0; i < 120; i ++) {
+//			LineBuffer[i] = CameraImgBuffer[i * 2 + LineNumber * 240];
+//		}
+//		for(i = 0; i < 120; i ++) {
+//			Color = 0xFF000000 + ((uint32_t)LineBuffer[i] << 16) + (uint32_t)(LineBuffer[i] << 8) + (uint32_t)LineBuffer[i];
+//			BSP_LCD_DrawPixel(IMG_POS_X + i, IMG_POS_Y + LineNumber, Color);
+//		}
+//	}
+//	BSP_CAMERA_SnapshotStart(CameraImgBuffer, 120 * 60);
 }
 
 /**
