@@ -467,8 +467,6 @@ __weak void BSP_CAMERA_MspInit(DCMI_HandleTypeDef *hdcmi, void *Params)
   HAL_NVIC_SetPriority(DCMI_IRQn, 0x0F, 0);
   HAL_NVIC_EnableIRQ(DCMI_IRQn);
 
-//__HAL_DMA_ENABLE_IT(hdcmi->DMA_Handle, DMA_IT_TC | DMA_IT_HT | DMA_IT_TE | DMA_IT_DME | DMA_IT_FE);
-//  
   /* NVIC configuration for DMA2D transfer complete interrupt */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0x0F, 0);
   HAL_NVIC_EnableIRQ(DMA2_Stream1_IRQn);
