@@ -86,14 +86,6 @@
 /** @defgroup STM32746G_DISCOVERY_CAMERA_Private_Defines STM32746G_DISCOVERY_CAMERA Private Defines
   * @{
   */
-#define CAMERA_VGA_RES_X          640
-#define CAMERA_VGA_RES_Y          480
-#define CAMERA_480x272_RES_X      480
-#define CAMERA_480x272_RES_Y      272
-#define CAMERA_QVGA_RES_X         320
-#define CAMERA_QVGA_RES_Y         240
-#define CAMERA_QQVGA_RES_X        160
-#define CAMERA_QQVGA_RES_Y        120
 
 /**
   * @}
@@ -111,8 +103,7 @@
   */ 
 DCMI_HandleTypeDef  hDcmiHandler;
 CAMERA_DrvTypeDef   *camera_drv;
-/* Camera current resolution naming (QQVGA, VGA, ...) */
-static uint32_t CameraCurrentResolution;
+static DMA_HandleTypeDef hdma_handler;
 
 /* Camera module I2C HW address */
 static uint32_t CameraHwAddress;
@@ -123,7 +114,7 @@ static uint32_t CameraHwAddress;
 /** @defgroup STM32746G_DISCOVERY_CAMERA_Private_FunctionPrototypes STM32746G_DISCOVERY_CAMERA Private Function Prototypes
   * @{
   */
-static uint32_t GetSize(uint32_t resolution);
+
 /**
   * @}
   */ 
@@ -138,7 +129,7 @@ static uint32_t GetSize(uint32_t resolution);
   *         naming QQVGA, QVGA, VGA ...
   * @retval Camera status
   */
-uint8_t BSP_CAMERA_Init(uint32_t Resolution)
+uint8_t BSP_CAMERA_Init(void)
 {
   DCMI_HandleTypeDef *phdcmi;
   uint8_t status = CAMERA_ERROR;
@@ -169,12 +160,11 @@ uint8_t BSP_CAMERA_Init(uint32_t Resolution)
     /* DCMI Initialization */
     BSP_CAMERA_MspInit(&hDcmiHandler, NULL);
     HAL_DCMI_Init(phdcmi);
+		__HAL_DCMI_ENABLE_IT(phdcmi, DCMI_IT_FRAME | DCMI_IT_LINE | DCMI_IT_VSYNC | DCMI_IT_ERR | DCMI_IT_OVR);
 
-    /* Camera Module Initialization via I2C to the wanted 'Resolution' */
-		camera_drv->Init(CameraHwAddress, Resolution);
+    /* Camera Module Initialization via I2C */
+		camera_drv->Init(CameraHwAddress, 0);
 		HAL_DCMI_DisableCROP(phdcmi);
-
-    CameraCurrentResolution = Resolution;
 
     /* Return CAMERA_OK status */
     status = CAMERA_OK;
@@ -203,13 +193,14 @@ uint8_t BSP_CAMERA_DeInit(void)
 
 /**
   * @brief  Starts the camera capture in continuous mode.
-  * @param  buff: pointer to the camera output buffer
+  * @param  buff: pointer to the camera output buffer.
+  * @param  size: size of the buffer.
   * @retval None
   */
-void BSP_CAMERA_ContinuousStart(uint8_t *buff)
+void BSP_CAMERA_ContinuousStart(uint8_t *buff, uint32_t size)
 { 
   /* Start the camera capture */
-  HAL_DCMI_Start_DMA(&hDcmiHandler, DCMI_MODE_CONTINUOUS, (uint32_t)buff, GetSize(CameraCurrentResolution));
+  HAL_DCMI_Start_DMA(&hDcmiHandler, DCMI_MODE_CONTINUOUS, (uint32_t)buff, size);
 }
 
 /**
@@ -217,10 +208,10 @@ void BSP_CAMERA_ContinuousStart(uint8_t *buff)
   * @param  buff: pointer to the camera output buffer
   * @retval None
   */
-void BSP_CAMERA_SnapshotStart(uint8_t *buff)
+void BSP_CAMERA_SnapshotStart(uint8_t *buff, uint32_t size)
 { 
   /* Start the camera capture */
-  HAL_DCMI_Start_DMA(&hDcmiHandler, DCMI_MODE_SNAPSHOT, (uint32_t)buff, GetSize(CameraCurrentResolution));
+  HAL_DCMI_Start_DMA(&hDcmiHandler, DCMI_MODE_SNAPSHOT, (uint32_t)buff, size);
 }
 
 /**
@@ -369,48 +360,17 @@ void BSP_CAMERA_ColorEffectConfig(uint32_t Effect)
   if(camera_drv->Config != NULL)
   {
     camera_drv->Config(CameraHwAddress, CAMERA_COLOR_EFFECT, Effect, 0);
-  }  
+  }
 }
 
-/**
-  * @brief  Get the capture size in pixels unit.
-  * @param  resolution: the current resolution.
-  * @retval capture size in pixels unit.
-  */
-static uint32_t GetSize(uint32_t resolution)
-{ 
-  uint32_t size = 0;
-  
-  /* Get capture size */
-  switch (resolution)
-  {
-  case CAMERA_R160x120:
-    {
-      size =  0x2580;
-    }
-    break;    
-  case CAMERA_R320x240:
-    {
-      size =  0x9600;
-    }
-    break;
-  case CAMERA_R480x272:
-    {
-      size =  0x1FE00;//0x1FE00;
-    }
-    break;
-  case CAMERA_R640x480:
-    {
-      size =  0x25800;
-    }    
-    break;
-  default:
-    {
-      break;
-    }
-  }
-  
-  return size;
+void BSP_CAMERA_IRQHandler(void)
+{
+	HAL_DCMI_IRQHandler(&hDcmiHandler);
+}
+
+void BSP_CAMERA_DMA_IRQHandler(void)
+{
+	HAL_DMA_IRQHandler(hDcmiHandler.DMA_Handle);
 }
 
 /**
@@ -421,7 +381,6 @@ static uint32_t GetSize(uint32_t resolution)
   */
 __weak void BSP_CAMERA_MspInit(DCMI_HandleTypeDef *hdcmi, void *Params)
 {
-  static DMA_HandleTypeDef hdma_handler;
   GPIO_InitTypeDef gpio_init_structure;
   
   /*** Enable peripherals and GPIO clocks ***/
@@ -489,7 +448,14 @@ __weak void BSP_CAMERA_MspInit(DCMI_HandleTypeDef *hdcmi, void *Params)
   hdma_handler.Init.FIFOMode            = DMA_FIFOMODE_DISABLE;
   hdma_handler.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
   hdma_handler.Init.MemBurst            = DMA_MBURST_SINGLE;
-  hdma_handler.Init.PeriphBurst         = DMA_PBURST_SINGLE; 
+  hdma_handler.Init.PeriphBurst         = DMA_PBURST_SINGLE;
+
+	hdma_handler.XferCpltCallback         = DCMI_DMA_XferCpltCallback;
+	hdma_handler.XferHalfCpltCallback     = DCMI_DMA_XferHalfCpltCallback;
+	hdma_handler.XferM1CpltCallback       = DCMI_DMA_XferM1CpltCallback;
+	hdma_handler.XferM1HalfCpltCallback   = DCMI_DMA_XferM1HalfCpltCallback;
+	hdma_handler.XferErrorCallback        = DCMI_DMA_XferErrorCallback;
+	hdma_handler.XferAbortCallback        = DCMI_DMA_XferAbortCallback;
 
   hdma_handler.Instance = DMA2_Stream1;
 
@@ -499,7 +465,9 @@ __weak void BSP_CAMERA_MspInit(DCMI_HandleTypeDef *hdcmi, void *Params)
   /*** Configure the NVIC for DCMI and DMA ***/
   /* NVIC configuration for DCMI transfer complete interrupt */
   HAL_NVIC_SetPriority(DCMI_IRQn, 0x0F, 0);
-  HAL_NVIC_EnableIRQ(DCMI_IRQn);  
+  HAL_NVIC_EnableIRQ(DCMI_IRQn);
+
+__HAL_DMA_ENABLE_IT(hdcmi->DMA_Handle, DMA_IT_TC | DMA_IT_HT | DMA_IT_TE | DMA_IT_DME | DMA_IT_FE);
   
   /* NVIC configuration for DMA2D transfer complete interrupt */
   HAL_NVIC_SetPriority(DMA2_Stream1_IRQn, 0x0F, 0);
@@ -532,6 +500,36 @@ __weak void BSP_CAMERA_MspDeInit(DCMI_HandleTypeDef *hdcmi, void *Params)
 
   /* GPIO pins clock and DMA clock can be shut down in the application 
      by surcharging this __weak function */ 
+}
+
+__weak void DCMI_DMA_XferCpltCallback(DMA_HandleTypeDef *phdma)
+{
+__nop();
+}
+
+__weak void DCMI_DMA_XferHalfCpltCallback(DMA_HandleTypeDef *phdma)
+{
+__nop();
+}
+
+__weak void DCMI_DMA_XferM1CpltCallback(DMA_HandleTypeDef *phdma)
+{
+__nop();
+}
+
+__weak void DCMI_DMA_XferM1HalfCpltCallback(DMA_HandleTypeDef *phdma)
+{
+__nop();
+}
+
+__weak void DCMI_DMA_XferErrorCallback(DMA_HandleTypeDef *phdma)
+{
+__nop();
+}
+
+__weak void DCMI_DMA_XferAbortCallback(DMA_HandleTypeDef *phdma)
+{
+__nop();
 }
 
 /**

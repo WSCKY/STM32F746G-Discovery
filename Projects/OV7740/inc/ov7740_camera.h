@@ -78,10 +78,6 @@ typedef enum
 
 } Camera_StatusTypeDef;
 
-#define RESOLUTION_R160x120      CAMERA_R160x120      /* QQVGA Resolution     */
-#define RESOLUTION_R320x240      CAMERA_R320x240      /* QVGA Resolution      */
-#define RESOLUTION_R480x272      CAMERA_R480x272      /* 480x272 Resolution   */
-#define RESOLUTION_R640x480      CAMERA_R640x480      /* VGA Resolution       */  
 /**
   * @}
   */ 
@@ -99,10 +95,10 @@ typedef enum
 /** @addtogroup STM32746G_DISCOVERY_CAMERA_Exported_Functions
   * @{
   */    
-uint8_t BSP_CAMERA_Init(uint32_t Resolution);  
+uint8_t BSP_CAMERA_Init(void);  
 uint8_t BSP_CAMERA_DeInit(void);
-void    BSP_CAMERA_ContinuousStart(uint8_t *buff);
-void    BSP_CAMERA_SnapshotStart(uint8_t *buff);
+void    BSP_CAMERA_ContinuousStart(uint8_t *buff, uint32_t size);
+void    BSP_CAMERA_SnapshotStart(uint8_t *buff, uint32_t size);
 void    BSP_CAMERA_Suspend(void);
 void    BSP_CAMERA_Resume(void);
 uint8_t BSP_CAMERA_Stop(void); 
@@ -123,6 +119,12 @@ void    BSP_CAMERA_ColorEffectConfig(uint32_t Effect);
 void BSP_CAMERA_MspInit(DCMI_HandleTypeDef *hdcmi, void *Params);
 void BSP_CAMERA_MspDeInit(DCMI_HandleTypeDef *hdcmi, void *Params);
 
+void DCMI_DMA_XferCpltCallback(DMA_HandleTypeDef *phdma);
+void DCMI_DMA_XferHalfCpltCallback(DMA_HandleTypeDef *phdma);
+void DCMI_DMA_XferM1CpltCallback(DMA_HandleTypeDef *phdma);
+void DCMI_DMA_XferM1HalfCpltCallback(DMA_HandleTypeDef *phdma);
+void DCMI_DMA_XferErrorCallback(DMA_HandleTypeDef *phdma);
+void DCMI_DMA_XferAbortCallback(DMA_HandleTypeDef *phdma);
 
 /**
   * @}
