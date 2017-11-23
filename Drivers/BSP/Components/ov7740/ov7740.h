@@ -71,7 +71,8 @@ typedef struct
   */
 
 /* OV7740 Registers definition */
-#define GC0329_SENSOR_ID_REG           0xFB
+#define OV7740_SENSOR_YAVG                0x2F   /* Luminance Average Value, Read Only Register */
+#define OV7740_SENSOR_REG63               0x63   /* Luminance Average Value of one zone, This zone was selected by Monitor[3:0] in REG 0x38 */
 //#define OV9655_SENSOR_COM7              0x12
 //#define OV9655_SENSOR_TSLB              0x3A
 //#define OV9655_SENSOR_MTX1              0x4F
