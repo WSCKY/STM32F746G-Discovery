@@ -19,7 +19,6 @@
   */
 #define LCD_FRAME_BUFFER          SDRAM_DEVICE_ADDR
 __attribute__((__aligned__(4))) static uint8_t CameraImgBuffer[120][120][2] = {0};
-//__attribute__((__aligned__(4))) static uint8_t LineBuffer[120] = {0};
 
 #define IMG_POS_X 180
 #define IMG_POS_Y 76
@@ -82,23 +81,7 @@ int main(void)
   }
 }
 
-//static uint8_t LineNumber = 0;
-void BSP_CAMERA_LineEventCallback(void)
-{
-//	uint32_t i = 0;
-//	uint32_t Color = 0xFF000000;
-//	for(; i < 120; i ++) {
-//		LineBuffer[i + LineNumber * 120] = CameraImgBuffer[i * 2 + LineNumber * 240];
-//	}
-//	for(i = 0; i < 120; i ++) {
-//		Color = 0xFF000000 + ((uint32_t)LineBuffer[i] << 16) + (uint32_t)(LineBuffer[i] << 8) + (uint32_t)LineBuffer[i];
-//		BSP_LCD_DrawPixel(IMG_POS_X + i, IMG_POS_Y + LineNumber, Color);
-//	}
-//	LineNumber ++;
-//	if(LineNumber >= 120)
-//		LineNumber = 0;
-}
-
+void BSP_CAMERA_LineEventCallback(void) {}
 void BSP_CAMERA_VsyncEventCallback(void) {}
 void BSP_CAMERA_FrameEventCallback(void)
 {
@@ -106,7 +89,7 @@ void BSP_CAMERA_FrameEventCallback(void)
 	uint32_t d = 0;
 	for(i = 0; i < 120; i ++) {
 		for(j = 0; j < 120; j ++) {
-			d = CameraImgBuffer[j][i][0];
+			d = CameraImgBuffer[j][i][0];//(CameraImgBuffer[j][i][0] >> 7) ? 0xFF : 0x00;//
 			*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((IMG_POS_Y + j) * 480) + IMG_POS_X + i) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);//0xFF000000 | d;//
 		}
 	}
