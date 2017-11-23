@@ -103,10 +103,10 @@ const unsigned char OV7740_CFG[][2] = {
 	{0x15, 0x00}, //Bit7: Enable inserting frames in night mode, ... Bit[1-0]: AGC MSBS (digital gain)
 	/* output size && start point */
 	{0x16, 0x00},
-	{0x17, 0x41}, //Sensor Horizontal Output Start Point 8 MSBs
-	{0x18, 0x1E}, //Sensor Horizontal Output Size 8 MSBs          (120 * 120)
-	{0x19, 0x5A}, //Sensor Vertical Output Start Point 8 MSBs
-	{0x1a, 0x3C}, //Sensor Vertical Output Size MSBs
+	{0x17, 0x32}, //Sensor Horizontal Output Start Point 8 MSBs
+	{0x18, 0x78}, //Sensor Horizontal Output Size 8 MSBs          (480 * 480)
+	{0x19, 0x04}, //Sensor Vertical Output Start Point 8 MSBs
+	{0x1a, 0xf0}, //Sensor Vertical Output Size MSBs
 
 	{0x1b, 0x80}, //Pixel Shift
 	{0x1e, 0x11}, //Bit[7:1]: Analog setting **Changing this value is not recommended**, Bit0: AEC step control.
@@ -114,9 +114,9 @@ const unsigned char OV7740_CFG[][2] = {
 	{0x21, 0x23}, //Bit[7-4]: Maximum banding step for 50Hz, Bit[3-0]: Maximum banding step for 60Hz; 4LSBs.
 //	{0x22, 0x00}, //Analog Setting **Changing this value is not recommended**    <!!!have no default value!!!>
 //	{0x23, 0x00}, //Analog Setting **Changing this value is not recommended**    <!!!have no default value!!!>
-	{0x24, 0x78}, //Luminance Signal High Range for AEC/AGC Operation
-	{0x25, 0x68}, //Luminance Signal Low Range for AEC/AGC Operation
-	{0x26, 0xd4}, //Effective only AEC/AGC fast mode
+	{0x24, 0xa0}, //Luminance Signal High Range for AEC/AGC Operation
+	{0x25, 0x60}, //Luminance Signal Low Range for AEC/AGC Operation
+	{0x26, 0x44}, //Effective only AEC/AGC fast mode
 	{0x27, 0x80}, //Bit7: Black sun cancellation enable, Analog setting **Changing this value is not recommended**
 	{0x28, 0x00}, //HREF, HSYNV, VSYNC configuration.
 	{0x29, 0x18}, //Horizontal tp Counter End Point LSBs
@@ -201,8 +201,8 @@ const unsigned char OV7740_CFG[][2] = {
 
 	{0x80, 0x7f}, //ISP Control 00
 	{0x81, 0x3f}, //ISP Control 01
-	{0x82, 0x32}, //ISP Control 02
-	{0x83, 0x09}, //ISP Control 03
+	{0x82, 0x3e}, //ISP Control 02, Vertical scaler enable(Bit3) && Horizontal scaler enable(Bit2)
+	{0x83, 0x0d}, //ISP Control 03
 
 	{0x38, 0x11},
 	{0x84, 0x70},
@@ -244,6 +244,10 @@ const unsigned char OV7740_CFG[][2] = {
 	{0xd3, 0x90},
 	{0xd4, 0x1e},
 	{0xd5, 0x10}, //Bit5: scale_size_restart, Bit4: scale_zoom_mode, Bit[2-0]: scale_step_num
+
+	{0xd7, 0x00},
+	{0xd8, 0x84},
+	{0xe5, 0x0c}, //Vertical scale control
 
 	{0xac, 0x6e},
 	{0xbe, 0xff},
