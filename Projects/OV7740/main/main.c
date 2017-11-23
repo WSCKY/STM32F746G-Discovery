@@ -71,6 +71,9 @@ int main(void)
 	else
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Failed!");
 
+	BSP_LCD_SetTextColor(LCD_COLOR_RED);
+	BSP_LCD_DrawRect(IMG_POS_X-1, IMG_POS_Y-1, 121, 121);
+
 //	BSP_CAMERA_ContinuousStart(CameraImgBuffer, 120 * 60);
 	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 120 * 60);
 
