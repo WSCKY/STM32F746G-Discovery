@@ -70,9 +70,9 @@ CAMERA_DrvTypeDef ov7740_drv =
 
 /* Initialization sequence for OV7740 */
 const unsigned char OV7740_CFG[][2] = {
-	{0x12, 0x80},
+	{0x12, 0x80}, //Initiate system reset. All registers are set to factory default value after which the chip resumes normal operation.
 	/* flag for soft reset delay */
-	{0x55, 0xC0},  //0xc0=PLLx8=60fps  0x40=PLLx4=30fps
+	{0x55, 0xc0},  //0xc0=PLLx8=60fps  0x40=PLLx4=30fps
 
 	/**************************************************************/
 	/*  30fps  11 01 ;clock_divider ;sysclk=24MHz at XCLK=24MHz   */
@@ -83,33 +83,38 @@ const unsigned char OV7740_CFG[][2] = {
 	/**************************************************************/
 	/*  7p5fps 11 0x0A ;sysclk=6MHz at XCLK=16.5MHz  (MCK=132/8)  */
 	/**************************************************************/
-	{0x11, 0x03}, //  div4
+	{0x11, 0x03}, //PLL setting && Clock divider
 	/**************************************************************/
 
-    {0x12, 0x00},
-    {0xd5, 0x10},
-    {0x0c, 0x12},
-    {0x0d, 0x34},
-//	{0x0e, 0x04},
+	{0x12, 0x00}, //Bit[6-0]:
+	{0x0c, 0xf0}, //Bit[6-7]: mirror(bit6) and filp(bit7) function control; Bit4: YUV output, Y<->UV swap
+	{0x0d, 0x34}, //Analog Setting **Changing this value is not recommended**
+	{0x0e, 0xe0}, //BLC line selection, Bit3: Sleep mode, Bit[1-0]: Output driving capability.
+	{0x0f, 0x1f}, //Automatic Exposure Control Bit[15-8]
+	{0x10, 0xf0}, //Automatic Exposure Control Bit[7-0]
 
-	{0x13, 0xB1},
-	{0x15, 0x00},
-	{0x2d, 0x00},
-	{0x2e, 0x00},
-	{0x15, 0x00},
-
+	{0x13, 0xB1}, //Bit7: AEC speed selection, Bit6: Enable frame drop function, Bit5: Banding enable, Bit4: Banding option, Bit3: LAEC enable ...
+	{0x14, 0x20}, //Bit7: Analog setting, Bit[6-4]: AGC gain ceiling, Bit[3-1]: Analog setting, Bit0: Manual LAEC enable.
+	{0x15, 0x00}, //Bit7: Enable inserting frames in night mode, ... Bit[1-0]: AGC MSBS (digital gain)
 	/* output size && start point */
-//	{0x16, 0x00},
+	{0x16, 0x00},
 	{0x17, 0x41}, //Sensor Horizontal Output Start Point 8 MSBs
-//	{0x18, 0x1E}, //Sensor Horizontal Output Size 8 MSBs          (120 * 120)
+	{0x18, 0x1E}, //Sensor Horizontal Output Size 8 MSBs          (120 * 120)
 	{0x19, 0x5A}, //Sensor Vertical Output Start Point 8 MSBs
-//	{0x1a, 0x3C}, //Sensor Vertical Output Size MSBs
+	{0x1a, 0x3C}, //Sensor Vertical Output Size MSBs
 
-	{0x1b, 0x89}, //;was 81
-	{0x22, 0x03}, //;new
+	{0x1b, 0x80}, //Pixel Shift
+	{0x1e, 0x11}, //Bit[7:1]: Analog setting **Changing this value is not recommended**, Bit0: AEC step control.
+	{0x1f, 0x00}, //LSBs of tp level exposure control when exposure is less than one line.(MSBs in REG 0x30)
+	{0x20, 0x00}, //Bit[7-6]: Maximum banding step for 50/60Hz, 1MSB; Bit[5-0]: Analog setting **Changing this value is not recommended**
+	{0x21, 0x23}, //Bit[7-4]: Maximum banding step for 50Hz, Bit[3-0]: Maximum banding step for 60Hz; 4LSBs.
+//	{0x22, 0x00}, //Analog Setting **Changing this value is not recommended**    <!!!have no default value!!!>
+//	{0x23, 0x00}, //Analog Setting **Changing this value is not recommended**    <!!!have no default value!!!>
 	{0x29, 0x18}, //;was 17
 	{0x2b, 0xf8},
 	{0x2c, 0x01},
+	{0x2d, 0x00}, //Automatically Inserted Dummy Lines in Night Mode LSBs
+	{0x2e, 0x00}, //Automatically Inserted Dummy Lines in Night Mode MSBs
 
 	{0x31, 0x1E}, //DSP H output size 8MSB                       (120 * 120)
 	{0x32, 0x3C}, //DSP V output size 8MSB
@@ -139,7 +144,6 @@ const unsigned char OV7740_CFG[][2] = {
 	{0x67, 0x88},
 	{0x68, 0x1a},
 
-	{0x14, 0x28}, //;38/28/18 for 16/8/4x gain ceiling
 	{0x24, 0x3c},
 	{0x25, 0x30},
 	{0x26, 0x72},
@@ -147,8 +151,6 @@ const unsigned char OV7740_CFG[][2] = {
 	{0x51, 0x7e},
 	{0x52, 0x00},
 	{0x53, 0x00},
-	{0x20, 0x00},
-	{0x21, 0x23},
 	/*********************************/
 	/* To enable Static Test Pattern */
 	/*********************************/
@@ -219,6 +221,7 @@ const unsigned char OV7740_CFG[][2] = {
 	{0xd2, 0x84},
 	{0xd3, 0x90},
 	{0xd4, 0x1e},
+	{0xd5, 0x10}, //Bit5: scale_size_restart, Bit4: scale_zoom_mode, Bit[2-0]: scale_step_num
 
 	{0x5a, 0x24},
 	{0x5b, 0x1f},
@@ -234,8 +237,6 @@ const unsigned char OV7740_CFG[][2] = {
 //	{0x32, 0x3C},
 //	{0x82, 0x3f},
 
-//	{0x0f ,0x1d},
-	{0x0f ,0x1f},
 };
 
 /**
