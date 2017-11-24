@@ -79,8 +79,13 @@ int main(void)
 
 	if(BSP_CAMERA_Init() == 0)
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Success!");
-	else
+	else {
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Failed!");
+		while(1) {
+			BSP_LED_Toggle(LED1);
+			HAL_Delay(50);
+		}
+	}
 
 	BSP_LCD_SetTextColor(LCD_COLOR_RED);
 	BSP_LCD_DrawRect(ORG_IMG_POS_X-1, ORG_IMG_POS_Y-1, 121, 121);
