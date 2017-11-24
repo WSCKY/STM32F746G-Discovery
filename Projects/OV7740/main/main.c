@@ -18,12 +18,23 @@
   * LCD Frame buffer start address : starts at beginning of SDRAM
   */
 #define LCD_FRAME_BUFFER          SDRAM_DEVICE_ADDR
-__attribute__((__aligned__(4))) static uint8_t CameraImgBuffer[120][120][2] = {0};
 
-#define IMG_POS_X 180
-#define IMG_POS_Y 76
+#define ORG_IMG_POS_X        40
+#define ORG_IMG_POS_Y        76
+
+#define BIN_IMG_POS_X        180
+#define BIN_IMG_POS_Y        76
+
+#define EDG_IMG_POS_X        320
+#define EDG_IMG_POS_Y        76
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+__attribute__((__aligned__(4))) static uint8_t CameraImgBuffer[120][120][2] = {0};
+__attribute__((__aligned__(4))) static uint8_t BinaryImgBuffer[120][120]    = {0};
+
+static uint8_t ImageUpdateFlag = 0;
+
+uint32_t _cnt_x = 0, _cnt_y = 0;
 /* Global extern variables ---------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
@@ -72,15 +83,39 @@ int main(void)
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Failed!");
 
 	BSP_LCD_SetTextColor(LCD_COLOR_RED);
-	BSP_LCD_DrawRect(IMG_POS_X-1, IMG_POS_Y-1, 121, 121);
+	BSP_LCD_DrawRect(ORG_IMG_POS_X-1, ORG_IMG_POS_Y-1, 121, 121);
+	BSP_LCD_DrawRect(BIN_IMG_POS_X-1, BIN_IMG_POS_Y-1, 121, 121);
+	BSP_LCD_DrawRect(EDG_IMG_POS_X-1, EDG_IMG_POS_Y-1, 121, 121);
 
 //	BSP_CAMERA_ContinuousStart(CameraImgBuffer, 120 * 60);
 	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 120 * 60);
 
   while(1)
   {
-	  BSP_LED_Toggle(LED1);
-	  HAL_Delay(200);
+		if(ImageUpdateFlag == 1) {
+			for(_cnt_y = 0; _cnt_y < 120; _cnt_y ++) {
+				for(_cnt_x = 0; _cnt_x < 120; _cnt_x ++) {
+					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((BIN_IMG_POS_Y + _cnt_y) * 480) + BIN_IMG_POS_X + _cnt_x) << 2)) = (BinaryImgBuffer[_cnt_y][_cnt_x]) ? 0xFFFFFFFF : 0;
+				}
+			}
+			for(_cnt_y = 0; _cnt_y < 119; _cnt_y ++) {
+				for(_cnt_x = 0; _cnt_x < 119; _cnt_x ++) {
+					BinaryImgBuffer[_cnt_y][_cnt_x] = (BinaryImgBuffer[_cnt_y][_cnt_x] != BinaryImgBuffer[_cnt_y + 1][_cnt_x] || \
+					                                   BinaryImgBuffer[_cnt_y][_cnt_x] != BinaryImgBuffer[_cnt_y][_cnt_x + 1]) * 0xFF;
+				}
+			}
+			for(_cnt_y = 0; _cnt_y < 120; _cnt_y ++) {
+				for(_cnt_x = 0; _cnt_x < 120; _cnt_x ++) {
+					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((EDG_IMG_POS_Y + _cnt_y) * 480) + EDG_IMG_POS_X + _cnt_x) << 2)) = (BinaryImgBuffer[_cnt_y][_cnt_x]) ? 0xFFFFFFFF : 0;
+				}
+			}
+
+			ImageUpdateFlag = 0;
+			BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 120 * 60);
+			BSP_LED_Toggle(LED1);
+		}
+//	  BSP_LED_Toggle(LED1);
+//	  HAL_Delay(200);
   }
 }
 
@@ -92,11 +127,13 @@ void BSP_CAMERA_FrameEventCallback(void)
 	uint32_t d = 0;
 	for(i = 0; i < 120; i ++) {
 		for(j = 0; j < 120; j ++) {
-			d = CameraImgBuffer[j][i][0];//(CameraImgBuffer[j][i][0] >> 7) ? 0xFF : 0x00;//
-			*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((IMG_POS_Y + j) * 480) + IMG_POS_X + i) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);//0xFF000000 | d;//
+			BinaryImgBuffer[j][i] = (CameraImgBuffer[j][i][0] >> 7) ? 0xFF : 0x00;
+			d = CameraImgBuffer[j][i][0];
+			*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((ORG_IMG_POS_Y + j) * 480) + ORG_IMG_POS_X + i) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);
 		}
 	}
-	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 120 * 60);
+	ImageUpdateFlag =1;
+//	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 120 * 60);
 }
 
 /**
