@@ -104,22 +104,6 @@ int main(void)
 }
 
 /**
-  * @brief  Toggle LED1 to show user input state.   
-  * @param  None
-  * @retval None
-  */
-void Toggle_Leds(void)
-{
-  static uint32_t ticks;
-  
-  if(ticks++ == 100)
-  {
-    BSP_LED_Toggle(LED1);
-    ticks = 0;
-  }
-}
-
-/**
   * @brief This function provides accurate delay (in milliseconds) based 
   *        on SysTick counter flag.
   * @note This function is declared as __weak to be overwritten in case of other
@@ -197,105 +181,6 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-}
-
-/**
-  * @brief  Initializes the SD MSP.
-  * @param  hsd: SD handle
-  * @param  Params
-  * @retval None
-  */
-void BSP_SD_MspInit(SD_HandleTypeDef *hsd, void *Params)
-{
-  static DMA_HandleTypeDef dma_rx_handle;
-  static DMA_HandleTypeDef dma_tx_handle;
-  GPIO_InitTypeDef gpio_init_structure;
-
-  /* Enable SDIO clock */
-  __HAL_RCC_SDMMC1_CLK_ENABLE();
-  
-  /* Enable DMA2 clocks */
-  __DMAx_TxRx_CLK_ENABLE();
-
-  /* Enable GPIOs clock */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
-  
-  /* Common GPIO configuration */
-  gpio_init_structure.Mode      = GPIO_MODE_AF_PP;
-  gpio_init_structure.Pull      = GPIO_PULLUP;
-  gpio_init_structure.Speed     = GPIO_SPEED_HIGH;
-  gpio_init_structure.Alternate = GPIO_AF12_SDMMC1;
-  
-  /* GPIOC configuration */
-  gpio_init_structure.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10 | GPIO_PIN_11 | GPIO_PIN_12;
-  HAL_GPIO_Init(GPIOC, &gpio_init_structure);
-
-  /* GPIOD configuration */
-  gpio_init_structure.Pin = GPIO_PIN_2;
-  HAL_GPIO_Init(GPIOD, &gpio_init_structure);
-
-  /* NVIC configuration for SDIO interrupts */
-  HAL_NVIC_SetPriority(SDMMC1_IRQn, 0x05, 0);
-  HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
-    
-  /* Configure DMA Rx parameters */
-  dma_rx_handle.Init.Channel             = SD_DMAx_Rx_CHANNEL;
-  dma_rx_handle.Init.Direction           = DMA_PERIPH_TO_MEMORY;
-  dma_rx_handle.Init.PeriphInc           = DMA_PINC_DISABLE;
-  dma_rx_handle.Init.MemInc              = DMA_MINC_ENABLE;
-  dma_rx_handle.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-  dma_rx_handle.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
-  dma_rx_handle.Init.Mode                = DMA_PFCTRL;
-  dma_rx_handle.Init.Priority            = DMA_PRIORITY_VERY_HIGH;
-  dma_rx_handle.Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
-  dma_rx_handle.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
-  dma_rx_handle.Init.MemBurst            = DMA_MBURST_INC4;
-  dma_rx_handle.Init.PeriphBurst         = DMA_PBURST_INC4;
-  
-  dma_rx_handle.Instance = SD_DMAx_Rx_STREAM;
-  
-  /* Associate the DMA handle */
-  __HAL_LINKDMA(hsd, hdmarx, dma_rx_handle);
-  
-  /* Deinitialize the stream for new transfer */
-  HAL_DMA_DeInit(&dma_rx_handle);
-  
-  /* Configure the DMA stream */
-  HAL_DMA_Init(&dma_rx_handle);
-  
-  /* Configure DMA Tx parameters */
-  dma_tx_handle.Init.Channel             = SD_DMAx_Tx_CHANNEL;
-  dma_tx_handle.Init.Direction           = DMA_MEMORY_TO_PERIPH;
-  dma_tx_handle.Init.PeriphInc           = DMA_PINC_DISABLE;
-  dma_tx_handle.Init.MemInc              = DMA_MINC_ENABLE;
-  dma_tx_handle.Init.PeriphDataAlignment = DMA_PDATAALIGN_WORD;
-  dma_tx_handle.Init.MemDataAlignment    = DMA_MDATAALIGN_WORD;
-  dma_tx_handle.Init.Mode                = DMA_PFCTRL;
-  dma_tx_handle.Init.Priority            = DMA_PRIORITY_VERY_HIGH;
-  dma_tx_handle.Init.FIFOMode            = DMA_FIFOMODE_ENABLE;
-  dma_tx_handle.Init.FIFOThreshold       = DMA_FIFO_THRESHOLD_FULL;
-  dma_tx_handle.Init.MemBurst            = DMA_MBURST_INC4;
-  dma_tx_handle.Init.PeriphBurst         = DMA_PBURST_INC4;
-  
-  dma_tx_handle.Instance = SD_DMAx_Tx_STREAM;
-  
-  /* Associate the DMA handle */
-  __HAL_LINKDMA(hsd, hdmatx, dma_tx_handle);
-  
-  /* Deinitialize the stream for new transfer */
-  HAL_DMA_DeInit(&dma_tx_handle);
-  
-  /* Configure the DMA stream */
-  HAL_DMA_Init(&dma_tx_handle); 
-  
-  /* NVIC configuration for DMA transfer complete interrupt */
-  HAL_NVIC_SetPriority(SD_DMAx_Rx_IRQn, 0x06, 0);
-  HAL_NVIC_EnableIRQ(SD_DMAx_Rx_IRQn);
-  
-  /* NVIC configuration for DMA transfer complete interrupt */
-  HAL_NVIC_SetPriority(SD_DMAx_Tx_IRQn, 0x06, 0);
-  HAL_NVIC_EnableIRQ(SD_DMAx_Tx_IRQn);
 }
 
 /**

@@ -45,7 +45,6 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd;
-extern SD_HandleTypeDef uSdHandle;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -170,36 +169,6 @@ void OTG_HS_IRQHandler(void)
 #endif
 {
   HAL_PCD_IRQHandler(&hpcd);
-}
-
-/**
-  * @brief  This function handles SDMMC1 global interrupt request.
-  * @param  None
-  * @retval None
-  */
-void BSP_SDMMC_IRQHandler(void)
-{
-  HAL_SD_IRQHandler(&uSdHandle);
-}
-
-/**
-* @brief  This function handles DMA2 Stream 6 interrupt request.
-* @param  None
-* @retval None
-*/
-void BSP_SDMMC_DMA_Tx_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(uSdHandle.hdmatx);
-}
-
-/**
-* @brief  This function handles DMA2 Stream 3 interrupt request.
-* @param  None
-* @retval None
-*/
-void BSP_SDMMC_DMA_Rx_IRQHandler(void)
-{
-  HAL_DMA_IRQHandler(uSdHandle.hdmarx);
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
