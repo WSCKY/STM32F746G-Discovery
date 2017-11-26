@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32746g_discovery_sd.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V2.0.0
+  * @date    30-December-2016
   * @brief   This file includes the uSD card driver mounted on STM32746G-Discovery
   *          board.
   @verbatim
@@ -42,7 +42,8 @@
           are implemented by the user at application level. 
         o The SD erase block(s) is performed using the function BSP_SD_Erase() with specifying
           the number of blocks to erase.
-        o The SD runtime status is returned when calling the function BSP_SD_GetStatus().
+        o The SD runtime status is returned when calling the function BSP_SD_GetCardState().
+
   @endverbatim
   ******************************************************************************
   * @attention
@@ -115,7 +116,6 @@
   * @{
   */
 SD_HandleTypeDef uSdHandle;
-static SD_CardInfo      uSdCardInfo;
 
 /**
   * @}
@@ -161,7 +161,7 @@ uint8_t BSP_SD_Init(void)
   BSP_SD_MspInit(&uSdHandle, NULL);
 
   /* HAL SD initialization */
-  if(HAL_SD_Init(&uSdHandle, &uSdCardInfo) != SD_OK)
+  if(HAL_SD_Init(&uSdHandle) != HAL_OK)
   {
     sd_state = MSD_ERROR;
   }
@@ -169,8 +169,8 @@ uint8_t BSP_SD_Init(void)
   /* Configure SD Bus width */
   if(sd_state == MSD_OK)
   {
-    /* Enable wide operation */
-    if(HAL_SD_WideBusOperation_Config(&uSdHandle, SDMMC_BUS_WIDE_4B) != SD_OK)
+    /* Enable wide operation */ 
+    if(HAL_SD_ConfigWideBusOperation(&uSdHandle, SDMMC_BUS_WIDE_4B) != HAL_OK)
     {
       sd_state = MSD_ERROR;
     }
@@ -248,14 +248,14 @@ uint8_t BSP_SD_IsDetected(void)
 /**
   * @brief  Reads block(s) from a specified address in an SD card, in polling mode.
   * @param  pData: Pointer to the buffer that will contain the data to transmit
-  * @param  ReadAddr: Address from where data is to be read  
-  * @param  BlockSize: SD card data block size, that should be 512
-  * @param  NumOfBlocks: Number of SD blocks to read 
+  * @param  ReadAddr: Address from where data is to be read
+  * @param  NumOfBlocks: Number of SD blocks to read
+  * @param  Timeout: Timeout for read operation
   * @retval SD status
   */
-uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint64_t ReadAddr, uint32_t BlockSize, uint32_t NumOfBlocks)
+uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks, uint32_t Timeout)
 {
-  if(HAL_SD_ReadBlocks(&uSdHandle, pData, ReadAddr, BlockSize, NumOfBlocks) != SD_OK)
+  if(HAL_SD_ReadBlocks(&uSdHandle, (uint8_t *)pData, ReadAddr, NumOfBlocks, Timeout) != HAL_OK)
   {
     return MSD_ERROR;
   }
@@ -268,14 +268,14 @@ uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint64_t ReadAddr, uint32_t BlockSize
 /**
   * @brief  Writes block(s) to a specified address in an SD card, in polling mode. 
   * @param  pData: Pointer to the buffer that will contain the data to transmit
-  * @param  WriteAddr: Address from where data is to be written  
-  * @param  BlockSize: SD card data block size, that should be 512
+  * @param  WriteAddr: Address from where data is to be written
   * @param  NumOfBlocks: Number of SD blocks to write
+  * @param  Timeout: Timeout for write operation
   * @retval SD status
   */
-uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint64_t WriteAddr, uint32_t BlockSize, uint32_t NumOfBlocks)
+uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks, uint32_t Timeout)
 {
-  if(HAL_SD_WriteBlocks(&uSdHandle, pData, WriteAddr, BlockSize, NumOfBlocks) != SD_OK)
+  if(HAL_SD_WriteBlocks(&uSdHandle, (uint8_t *)pData, WriteAddr, NumOfBlocks, Timeout) != HAL_OK)
   {
     return MSD_ERROR;
   }
@@ -288,69 +288,41 @@ uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint64_t WriteAddr, uint32_t BlockSi
 /**
   * @brief  Reads block(s) from a specified address in an SD card, in DMA mode.
   * @param  pData: Pointer to the buffer that will contain the data to transmit
-  * @param  ReadAddr: Address from where data is to be read  
-  * @param  BlockSize: SD card data block size, that should be 512
+  * @param  ReadAddr: Address from where data is to be read
   * @param  NumOfBlocks: Number of SD blocks to read 
   * @retval SD status
   */
-uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint64_t ReadAddr, uint32_t BlockSize, uint32_t NumOfBlocks)
-{
-  uint8_t sd_state = MSD_OK;
-  
+uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks)
+{  
   /* Read block(s) in DMA transfer mode */
-  if(HAL_SD_ReadBlocks_DMA(&uSdHandle, pData, ReadAddr, BlockSize, NumOfBlocks) != SD_OK)
+  if(HAL_SD_ReadBlocks_DMA(&uSdHandle, (uint8_t *)pData, ReadAddr, NumOfBlocks) != HAL_OK)
   {
-    sd_state = MSD_ERROR;
+    return MSD_ERROR;
   }
-  
-  /* Wait until transfer is complete */
-  if(sd_state == MSD_OK)
+  else
   {
-    if(HAL_SD_CheckReadOperation(&uSdHandle, (uint32_t)SD_DATATIMEOUT) != SD_OK)
-    {
-      sd_state = MSD_ERROR;
-    }
-    else
-    {
-      sd_state = MSD_OK;
-    }
+    return MSD_OK;
   }
-  
-  return sd_state;
 }
 
 /**
   * @brief  Writes block(s) to a specified address in an SD card, in DMA mode.
   * @param  pData: Pointer to the buffer that will contain the data to transmit
-  * @param  WriteAddr: Address from where data is to be written  
-  * @param  BlockSize: SD card data block size, that should be 512
+  * @param  WriteAddr: Address from where data is to be written
   * @param  NumOfBlocks: Number of SD blocks to write 
   * @retval SD status
   */
-uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint64_t WriteAddr, uint32_t BlockSize, uint32_t NumOfBlocks)
-{
-  uint8_t sd_state = MSD_OK;
-  
+uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks)
+{ 
   /* Write block(s) in DMA transfer mode */
-  if(HAL_SD_WriteBlocks_DMA(&uSdHandle, pData, WriteAddr, BlockSize, NumOfBlocks) != SD_OK)
+  if(HAL_SD_WriteBlocks_DMA(&uSdHandle, (uint8_t *)pData, WriteAddr, NumOfBlocks) != HAL_OK)
   {
-    sd_state = MSD_ERROR;
+    return MSD_ERROR;
   }
-  
-  /* Wait until transfer is complete */
-  if(sd_state == MSD_OK)
+  else
   {
-    if(HAL_SD_CheckWriteOperation(&uSdHandle, (uint32_t)SD_DATATIMEOUT) != SD_OK)
-    {
-      sd_state = MSD_ERROR;
-    }
-    else
-    {
-      sd_state = MSD_OK;
-    }
+    return MSD_OK;
   }
-  
-  return sd_state;
 }
 
 /**
@@ -359,9 +331,9 @@ uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint64_t WriteAddr, uint32_t Blo
   * @param  EndAddr: End byte address
   * @retval SD status
   */
-uint8_t BSP_SD_Erase(uint64_t StartAddr, uint64_t EndAddr)
+uint8_t BSP_SD_Erase(uint32_t StartAddr, uint32_t EndAddr)
 {
-  if(HAL_SD_Erase(&uSdHandle, StartAddr, EndAddr) != SD_OK)
+  if(HAL_SD_Erase(&uSdHandle, StartAddr, EndAddr) != HAL_OK)
   {
     return MSD_ERROR;
   }
@@ -408,7 +380,7 @@ __weak void BSP_SD_MspInit(SD_HandleTypeDef *hsd, void *Params)
   HAL_GPIO_Init(GPIOD, &gpio_init_structure);
 
   /* NVIC configuration for SDIO interrupts */
-  HAL_NVIC_SetPriority(SDMMC1_IRQn, 5, 0);
+  HAL_NVIC_SetPriority(SDMMC1_IRQn, 0x0E, 0);
   HAL_NVIC_EnableIRQ(SDMMC1_IRQn);
     
   /* Configure DMA Rx parameters */
@@ -462,11 +434,11 @@ __weak void BSP_SD_MspInit(SD_HandleTypeDef *hsd, void *Params)
   HAL_DMA_Init(&dma_tx_handle); 
   
   /* NVIC configuration for DMA transfer complete interrupt */
-  HAL_NVIC_SetPriority(SD_DMAx_Rx_IRQn, 6, 0);
+  HAL_NVIC_SetPriority(SD_DMAx_Rx_IRQn, 0x0F, 0);
   HAL_NVIC_EnableIRQ(SD_DMAx_Rx_IRQn);
   
   /* NVIC configuration for DMA transfer complete interrupt */
-  HAL_NVIC_SetPriority(SD_DMAx_Tx_IRQn, 6, 0);
+  HAL_NVIC_SetPriority(SD_DMAx_Tx_IRQn, 0x0F, 0);
   HAL_NVIC_EnableIRQ(SD_DMAx_Tx_IRQn);
 }
 
@@ -528,26 +500,87 @@ __weak void BSP_SD_MspDeInit(SD_HandleTypeDef *hsd, void *Params)
 
 /**
   * @brief  Gets the current SD card data status.
+  * @param  None
   * @retval Data transfer state.
   *          This value can be one of the following values:
   *            @arg  SD_TRANSFER_OK: No data transfer is acting
   *            @arg  SD_TRANSFER_BUSY: Data transfer is acting
-  *            @arg  SD_TRANSFER_ERROR: Data transfer error 
   */
-HAL_SD_TransferStateTypedef BSP_SD_GetStatus(void)
+uint8_t BSP_SD_GetCardState(void)
 {
-  return(HAL_SD_GetStatus(&uSdHandle));
+  return((HAL_SD_GetCardState(&uSdHandle) == HAL_SD_CARD_TRANSFER ) ? SD_TRANSFER_OK : SD_TRANSFER_BUSY);
 }
+  
 
 /**
   * @brief  Get SD information about specific SD card.
   * @param  CardInfo: Pointer to HAL_SD_CardInfoTypedef structure
   * @retval None 
   */
-void BSP_SD_GetCardInfo(HAL_SD_CardInfoTypedef *CardInfo)
+void BSP_SD_GetCardInfo(HAL_SD_CardInfoTypeDef *CardInfo)
 {
   /* Get SD card Information */
-  HAL_SD_Get_CardInfo(&uSdHandle, CardInfo);
+  HAL_SD_GetCardInfo(&uSdHandle, CardInfo);
+}
+
+/**
+  * @brief SD Abort callbacks
+  * @param hsd: SD handle
+  * @retval None
+  */
+void HAL_SD_AbortCallback(SD_HandleTypeDef *hsd)
+{
+  BSP_SD_AbortCallback();
+}
+
+/**
+  * @brief Tx Transfer completed callbacks
+  * @param hsd: SD handle
+  * @retval None
+  */
+void HAL_SD_TxCpltCallback(SD_HandleTypeDef *hsd)
+{
+  BSP_SD_WriteCpltCallback();
+}
+
+/**
+  * @brief Rx Transfer completed callbacks
+  * @param hsd: SD handle
+  * @retval None
+  */
+void HAL_SD_RxCpltCallback(SD_HandleTypeDef *hsd)
+{
+  BSP_SD_ReadCpltCallback();
+}
+
+/**
+  * @brief BSP SD Abort callbacks
+  * @param None
+  * @retval None
+  */
+__weak void BSP_SD_AbortCallback(void)
+{
+
+}
+
+/**
+  * @brief BSP Tx Transfer completed callbacks
+  * @param None
+  * @retval None
+  */
+__weak void BSP_SD_WriteCpltCallback(void)
+{
+
+}
+
+/**
+  * @brief BSP Rx Transfer completed callbacks
+  * @param None
+  * @retval None
+  */
+__weak void BSP_SD_ReadCpltCallback(void)
+{
+
 }
 
 /**

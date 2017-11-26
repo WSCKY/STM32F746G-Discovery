@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32746g_discovery_sd.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    22-April-2016
+  * @version V2.0.0
+  * @date    30-December-2016
   * @brief   This file contains the common defines and functions prototypes for
   *          the stm32746g_discovery_sd.c driver.
   ******************************************************************************
@@ -66,7 +66,7 @@
 /** 
   * @brief SD Card information structure 
   */
-#define SD_CardInfo HAL_SD_CardInfoTypedef
+#define BSP_SD_CardInfo HAL_SD_CardInfoTypeDef
 /**
   * @}
   */
@@ -77,6 +77,12 @@
 #define MSD_OK                        ((uint8_t)0x00)
 #define MSD_ERROR                     ((uint8_t)0x01)
 #define MSD_ERROR_SD_NOT_PRESENT      ((uint8_t)0x02)
+
+/** 
+  * @brief  SD transfer state definition  
+  */     
+#define   SD_TRANSFER_OK                ((uint8_t)0x00)
+#define   SD_TRANSFER_BUSY              ((uint8_t)0x01)
    
 /** @defgroup STM32746G_DISCOVERY_SD_Exported_Constants STM32746G_DISCOVERY_SD Exported Constants
   * @{
@@ -115,15 +121,13 @@
 uint8_t BSP_SD_Init(void);
 uint8_t BSP_SD_DeInit(void);
 uint8_t BSP_SD_ITConfig(void);
-void    BSP_SD_DetectIT(void);
-void    BSP_SD_DetectCallback(void);
-uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint64_t ReadAddr, uint32_t BlockSize, uint32_t NumOfBlocks);
-uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint64_t WriteAddr, uint32_t BlockSize, uint32_t NumOfBlocks);
-uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint64_t ReadAddr, uint32_t BlockSize, uint32_t NumOfBlocks);
-uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint64_t WriteAddr, uint32_t BlockSize, uint32_t NumOfBlocks);
-uint8_t BSP_SD_Erase(uint64_t StartAddr, uint64_t EndAddr);
-HAL_SD_TransferStateTypedef BSP_SD_GetStatus(void);
-void    BSP_SD_GetCardInfo(HAL_SD_CardInfoTypedef *CardInfo);
+uint8_t BSP_SD_ReadBlocks(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks, uint32_t Timeout);
+uint8_t BSP_SD_WriteBlocks(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks, uint32_t Timeout);
+uint8_t BSP_SD_ReadBlocks_DMA(uint32_t *pData, uint32_t ReadAddr, uint32_t NumOfBlocks);
+uint8_t BSP_SD_WriteBlocks_DMA(uint32_t *pData, uint32_t WriteAddr, uint32_t NumOfBlocks);
+uint8_t BSP_SD_Erase(uint32_t StartAddr, uint32_t EndAddr);
+uint8_t BSP_SD_GetCardState(void);
+void    BSP_SD_GetCardInfo(HAL_SD_CardInfoTypeDef *CardInfo);
 uint8_t BSP_SD_IsDetected(void);
 
 /* These functions can be modified in case the current settings (e.g. DMA stream)
@@ -131,7 +135,9 @@ uint8_t BSP_SD_IsDetected(void);
 void    BSP_SD_MspInit(SD_HandleTypeDef *hsd, void *Params);
 void    BSP_SD_Detect_MspInit(SD_HandleTypeDef *hsd, void *Params);
 void    BSP_SD_MspDeInit(SD_HandleTypeDef *hsd, void *Params);
-
+void    BSP_SD_AbortCallback(void);
+void    BSP_SD_WriteCpltCallback(void);
+void    BSP_SD_ReadCpltCallback(void);
 /**
   * @}
   */ 
