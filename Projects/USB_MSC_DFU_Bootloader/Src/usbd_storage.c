@@ -51,10 +51,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define STORAGE_LUN_NBR                  1  
-#define STORAGE_BLK_NBR                  0x10000  
-#define STORAGE_BLK_SIZ                  0x200
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 __IO uint32_t writestatus, readstatus = 0;
@@ -104,7 +100,7 @@ USBD_StorageTypeDef USBD_DISK_fops = {
   */
 int8_t STORAGE_Init(uint8_t lun)
 {
-  return 0;
+  return FATFS_OK;
 }
 
 /**
@@ -118,7 +114,7 @@ int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_siz
 {
 	*block_num = TOTAL_SECTORS;
 	*block_size = SECTOR_SIZE;
-	return 0;
+	return FATFS_OK;
 }
 
 /**
@@ -128,11 +124,11 @@ int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_siz
   */
 int8_t STORAGE_IsReady(uint8_t lun)
 {
-  int8_t ret = -1;
+  int8_t ret = FATFS_ERROR;
 
 //  if()
 //  {
-      ret = 0;
+      ret = FATFS_OK;
 //  }
 
   return ret;
@@ -145,7 +141,7 @@ int8_t STORAGE_IsReady(uint8_t lun)
   */
 int8_t STORAGE_IsWriteProtected(uint8_t lun)
 {
-  return 0;
+  return FATFS_OK;
 }
 
 /**
@@ -157,50 +153,46 @@ int8_t STORAGE_IsWriteProtected(uint8_t lun)
   */
 int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
-	int8_t ret = -1;
-	uint16_t Index = 0;
-	uint16_t Address = 0;
-	uint8_t *pBuf = (uint8_t *)buf;
-	uint32_t Memory_Offset = blk_addr * 512;
-	uint32_t Transfer_Length = blk_len * 512;
-	if(lun == 0)
-	{
-		if(Memory_Offset < FATFS_USED_SIZE)
-		{
-			Address = Memory_Offset;
-			for(Index = 0; Index < Transfer_Length; Index ++)
-			{
-				if(Address < BOOT_TABLE_USED_SIZE + BOOT_TABLE_OFFSET)
-					pBuf[Index] = BOOT_TABLE[Address];
-				else if(Address < BOOT_TABLE_SIZE + BOOT_TABLE_OFFSET - 2)
-					pBuf[Index] = 0;
-				else if(Address == BOOT_TABLE_SIZE + BOOT_TABLE_OFFSET - 2)
-					pBuf[Index] = 0x55;
-				else if(Address == BOOT_TABLE_SIZE + BOOT_TABLE_OFFSET - 1)
-					pBuf[Index] = 0xAA;
-				else if(Address < FAT_TABLE_SIZE + FAT1_TABLE_OFFSET)
-					pBuf[Index] = FATn_TABLE[Address - FAT1_TABLE_OFFSET];
-				else if(Address < FAT_TABLE_SIZE + FAT2_TABLE_OFFSET)
-					pBuf[Index] = FATn_TABLE[Address - FAT2_TABLE_OFFSET];
-				else if(Address < ROOT_TABLE_SIZE + ROOT_TABLE_OFFSET)
-					pBuf[Index] = ROOT_TABLE[Address - ROOT_TABLE_OFFSET];
-				else break;
-
-				Address ++;
+	uint32_t blk_addr_offset = 0;
+	uint32_t blk_copy_number = 0;
+	if(lun == 0) {
+		do {
+			if(blk_addr == BOOT_TABLE_SECTOR_IDX) {
+				blk_copy_number = 1;
+				USBD_memcpy(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), BOOT_TABLE, BOOT_TABLE_USED_SIZE);
+				USBD_memset(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset) + BOOT_TABLE_USED_SIZE, 0, BOOT_TABLE_SIZE - BOOT_TABLE_USED_SIZE);
+				(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset))[BOOT_TABLE_SIZE - 2] = 0x55;
+				(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset))[BOOT_TABLE_SIZE - 1] = 0xAA;
+			} else if(blk_addr < FAT2_TABLE_SECTOR_IDX) {
+				blk_copy_number = (FAT2_TABLE_SECTOR_IDX - blk_addr > blk_len) ? blk_len : FAT2_TABLE_SECTOR_IDX - blk_addr;
+				USBD_memcpy(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), FATn_TABLE + SECTOR_IDX_TO_ADDR(blk_addr - FAT1_TABLE_SECTOR_IDX), SECTORS_CONV_BYTES(blk_copy_number));
+			} else if(blk_addr < ROOT_TABLE_SECTOR_IDX) {
+				blk_copy_number = (ROOT_TABLE_SECTOR_IDX - blk_addr > blk_len) ? blk_len : ROOT_TABLE_SECTOR_IDX - blk_addr;
+				USBD_memcpy(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), FATn_TABLE + SECTOR_IDX_TO_ADDR(blk_addr - FAT2_TABLE_SECTOR_IDX), SECTORS_CONV_BYTES(blk_copy_number));
+			} else if(blk_addr < FATFS_TOTAL_SECTORS) {
+				blk_copy_number = (FATFS_TOTAL_SECTORS - blk_addr > blk_len) ? blk_len : FATFS_TOTAL_SECTORS - blk_addr;
+				USBD_memcpy(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), ROOT_TABLE + SECTOR_IDX_TO_ADDR(blk_addr - ROOT_TABLE_SECTOR_IDX), SECTORS_CONV_BYTES(blk_copy_number));
+			} else {
+				/* README.TXT */
+				if(blk_addr < README_SECT_IDX + README_SECT_NUM) {
+					if(blk_addr == README_SECT_IDX + README_SECT_NUM - 1) {/* END OF FILE */
+						blk_copy_number = 1;
+						USBD_memcpy(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), README_DATA + SECTORS_CONV_BYTES(README_SECT_NUM - 1), README_TAIL_LEN);
+						USBD_memset(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset) + README_TAIL_LEN, 0, SECTOR_SIZE - README_TAIL_LEN);
+					} else {
+						blk_copy_number = (README_SECT_IDX + README_SECT_NUM - blk_addr - 1 > blk_len) ? blk_len : README_SECT_IDX + README_SECT_NUM - blk_addr - 1;
+						USBD_memcpy(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), README_DATA + SECTOR_IDX_TO_ADDR(blk_addr - README_SECT_IDX), SECTORS_CONV_BYTES(blk_copy_number));
+					}
+				} else {
+					/* DATA IN FLASH */
+					blk_copy_number = blk_len;
+				}
 			}
-			return 0;
-		}
-		else
-		{
-			return 0;
-//			Memory_Offset -= FAT_USED_SIZE;
-//			for(Index = 0; Index < Transfer_Length; Index += 4)
-//			{
-//				Readbuff[Index>>2] = *((uint32_t *)(FAT_TABLE_ADDR + Memory_Offset + Index));
-//			}
-		}
+			blk_len -= blk_copy_number; blk_addr += blk_copy_number; blk_addr_offset += blk_copy_number;
+		} while(blk_len);
+		return FATFS_OK;
 	}
-	return ret;
+	return FATFS_ERROR;
 }
 
 /**
@@ -212,25 +204,10 @@ int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_l
   */
 int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
-  int8_t ret = -1;  
-//  
-//  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
-//  {
-//    BSP_SD_WriteBlocks_DMA((uint32_t *)buf, blk_addr, blk_len);
-//    WriteTimes ++;
-//    /* Wait for Tx Transfer completion */
-//    while (writestatus == 0)
-//    {
-//    }
-//    writestatus = 0;
-//    
-//    /* Wait until SD card is ready to use for new operation */
-//    while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
-//    {
-//    }
-//    
-    ret = 0;
-//  }
+  int8_t ret = FATFS_ERROR;  
+
+  ret = FATFS_OK;
+
   return ret;
 }
 
@@ -241,7 +218,7 @@ int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_
   */
 int8_t STORAGE_GetMaxLun(void)
 {
-  return(STORAGE_LUN_NBR - 1);
+  return 0;
 }
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
