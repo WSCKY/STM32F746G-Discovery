@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/MSC_Standalone/Src/usbd_storage.c
-  * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
+  * @file    ./Src/usbd_storage.c
+  * @author  kyChu
+  * @version V1.0.0
+  * @date    26-November-2017
   * @brief   Memory management layer
   ******************************************************************************
   * @attention
@@ -47,7 +47,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_storage.h"
-#include "stm32746g_discovery_sd.h"
+#include "FAT_TAB.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -70,11 +70,11 @@ int8_t STORAGE_Inquirydata[] = { /* 36 */
   0x00,
   0x00,	
   0x00,
-  'S', 'T', 'M', ' ', ' ', ' ', ' ', ' ', /* Manufacturer: 8 bytes  */
-  'P', 'r', 'o', 'd', 'u', 'c', 't', ' ', /* Product     : 16 Bytes */
-  ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-  '0', '.', '0','1',                      /* Version     : 4 Bytes  */
-}; 
+  'k', 'y', '.', 'C', 'h', 'u', ' ', ' ', /* Manufacturer: 8 bytes  */
+  'V', 'e', 'h', 'i', 'c', 'l', 'e', ' ', /* Product     : 16 Bytes */
+  'U', 'p', 'g', 'r', 'a', 'd', 'e', 'r',
+  '0', '.', '8','8',                      /* Version     : 4 Bytes  */
+};
 
 /* Private function prototypes -----------------------------------------------*/
 int8_t STORAGE_Init(uint8_t lun);
@@ -104,7 +104,6 @@ USBD_StorageTypeDef USBD_DISK_fops = {
   */
 int8_t STORAGE_Init(uint8_t lun)
 {
-  BSP_SD_Init();
   return 0;
 }
 
@@ -117,18 +116,9 @@ int8_t STORAGE_Init(uint8_t lun)
   */
 int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_size)
 {
-  HAL_SD_CardInfoTypeDef info;
-  int8_t ret = -1;  
-  
-  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
-  {
-    BSP_SD_GetCardInfo(&info);
-    
-    *block_num = info.LogBlockNbr - 1;
-    *block_size = info.LogBlockSize;
-    ret = 0;
-  }
-  return ret;
+	*block_num = TOTAL_SECTORS;
+	*block_size = SECTOR_SIZE;
+	return 0;
 }
 
 /**
@@ -138,26 +128,12 @@ int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_siz
   */
 int8_t STORAGE_IsReady(uint8_t lun)
 {
-  static int8_t prev_status = 0;
   int8_t ret = -1;
-  
-  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
-  {
-    if(prev_status < 0)
-    {
-      BSP_SD_Init();
-      prev_status = 0;
-      
-    }
-    if(BSP_SD_GetCardState() == SD_TRANSFER_OK)
-    {
+
+//  if()
+//  {
       ret = 0;
-    }
-  }
-  else if(prev_status == 0)
-  {
-    prev_status = -1;
-  }
+//  }
 
   return ret;
 }
@@ -181,26 +157,50 @@ int8_t STORAGE_IsWriteProtected(uint8_t lun)
   */
 int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
-  int8_t ret = -1;  
-  
-  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
-  {  
-    BSP_SD_ReadBlocks_DMA((uint32_t *)buf, blk_addr, blk_len);
-    
-    /* Wait for Rx Transfer completion */
-    while (readstatus == 0)
-    {
-    }
-    readstatus = 0;
-    
-    /* Wait until SD card is ready to use for new operation */
-    while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
-    {
-    }
-    
-    ret = 0;
-  }
-  return ret;
+	int8_t ret = -1;
+	uint16_t Index = 0;
+	uint16_t Address = 0;
+	uint8_t *pBuf = (uint8_t *)buf;
+	uint32_t Memory_Offset = blk_addr * 512;
+	uint32_t Transfer_Length = blk_len * 512;
+	if(lun == 0)
+	{
+		if(Memory_Offset < FATFS_USED_SIZE)
+		{
+			Address = Memory_Offset;
+			for(Index = 0; Index < Transfer_Length; Index ++)
+			{
+				if(Address < BOOT_TABLE_USED_SIZE + BOOT_TABLE_OFFSET)
+					pBuf[Index] = BOOT_TABLE[Address];
+				else if(Address < BOOT_TABLE_SIZE + BOOT_TABLE_OFFSET - 2)
+					pBuf[Index] = 0;
+				else if(Address == BOOT_TABLE_SIZE + BOOT_TABLE_OFFSET - 2)
+					pBuf[Index] = 0x55;
+				else if(Address == BOOT_TABLE_SIZE + BOOT_TABLE_OFFSET - 1)
+					pBuf[Index] = 0xAA;
+				else if(Address < FAT_TABLE_SIZE + FAT1_TABLE_OFFSET)
+					pBuf[Index] = FATn_TABLE[Address - FAT1_TABLE_OFFSET];
+				else if(Address < FAT_TABLE_SIZE + FAT2_TABLE_OFFSET)
+					pBuf[Index] = FATn_TABLE[Address - FAT2_TABLE_OFFSET];
+				else if(Address < ROOT_TABLE_SIZE + ROOT_TABLE_OFFSET)
+					pBuf[Index] = ROOT_TABLE[Address - ROOT_TABLE_OFFSET];
+				else break;
+
+				Address ++;
+			}
+			return 0;
+		}
+		else
+		{
+			return 0;
+//			Memory_Offset -= FAT_USED_SIZE;
+//			for(Index = 0; Index < Transfer_Length; Index += 4)
+//			{
+//				Readbuff[Index>>2] = *((uint32_t *)(FAT_TABLE_ADDR + Memory_Offset + Index));
+//			}
+		}
+	}
+	return ret;
 }
 
 /**
@@ -213,24 +213,24 @@ int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_l
 int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
   int8_t ret = -1;  
-  
-  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
-  {
-    BSP_SD_WriteBlocks_DMA((uint32_t *)buf, blk_addr, blk_len);
-    
-    /* Wait for Tx Transfer completion */
-    while (writestatus == 0)
-    {
-    }
-    writestatus = 0;
-    
-    /* Wait until SD card is ready to use for new operation */
-    while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
-    {
-    }
-    
+//  
+//  if(BSP_SD_IsDetected() != SD_NOT_PRESENT)
+//  {
+//    BSP_SD_WriteBlocks_DMA((uint32_t *)buf, blk_addr, blk_len);
+//    WriteTimes ++;
+//    /* Wait for Tx Transfer completion */
+//    while (writestatus == 0)
+//    {
+//    }
+//    writestatus = 0;
+//    
+//    /* Wait until SD card is ready to use for new operation */
+//    while (BSP_SD_GetCardState() != SD_TRANSFER_OK)
+//    {
+//    }
+//    
     ret = 0;
-  }
+//  }
   return ret;
 }
 
@@ -244,26 +244,4 @@ int8_t STORAGE_GetMaxLun(void)
   return(STORAGE_LUN_NBR - 1);
 }
 
-/**
-  * @brief BSP Tx Transfer completed callbacks
-  * @param None
-  * @retval None
-  */
-void BSP_SD_WriteCpltCallback(void)
-{
-  writestatus = 1;
-}
-
-/**
-  * @brief BSP Rx Transfer completed callbacks
-  * @param None
-  * @retval None
-  */
-void BSP_SD_ReadCpltCallback(void)
-{
-  readstatus = 1;
-}
- 
-
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
-
