@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/MSC_Standalone/Src/main.c
-  * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
+  * @file    ./Src/main.c
+  * @author  kyChu
+  * @version V1.0.0
+  * @date    26-November-2017
   * @brief   USB device Mass storage demo main file
   ******************************************************************************
   * @attention
@@ -68,39 +68,37 @@ static void CPU_CACHE_Enable(void);
   */
 int main(void)
 {
-  /* Enable the CPU Cache */
-  CPU_CACHE_Enable();
-  
-  /* STM32F7xx HAL library initialization:
+	/* Enable the CPU Cache */
+	CPU_CACHE_Enable();
+
+	/* STM32F7xx HAL library initialization:
        - Configure the Flash ART accelerator on ITCM interface
        - Configure the Systick to generate an interrupt each 1 msec
        - Set NVIC Group Priority to 4
        - Low Level Initialization
      */
-  HAL_Init();
-  
-  /* Configure the System clock to have a frequency of 216 MHz */
-  SystemClock_Config();
-    
-  /* Configure LED1 */
-  BSP_LED_Init(LED1);
-  
-  /* Init Device Library */
-  USBD_Init(&USBD_Device, &MSC_Desc, 0);
-  
-  /* Add Supported Class */
-  USBD_RegisterClass(&USBD_Device, USBD_MSC_CLASS);
-  
-  /* Add Storage callbacks for MSC Class */
-  USBD_MSC_RegisterStorage(&USBD_Device, &USBD_DISK_fops);
-  
-  /* Start Device Process */
-  USBD_Start(&USBD_Device);
-  
-  /* Run Application (Interrupt mode) */
-  while (1)
-  {
-  }
+	HAL_Init();
+
+	/* Configure the System clock to have a frequency of 216 MHz */
+	SystemClock_Config();
+
+	/* Configure LED1 */
+	BSP_LED_Init(LED1);
+
+	/* Init Device Library */
+	USBD_Init(&USBD_Device, &MSC_Desc, 0);
+
+	/* Add Supported Class */
+	USBD_RegisterClass(&USBD_Device, USBD_MSC_CLASS);
+
+	/* Add Storage callbacks for MSC Class */
+	USBD_MSC_RegisterStorage(&USBD_Device, &USBD_DISK_fops);
+
+	/* Start Device Process */
+	USBD_Start(&USBD_Device);
+
+	/* Run Application (Interrupt mode) */
+	while(1) {}
 }
 
 /**

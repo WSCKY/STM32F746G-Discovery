@@ -1,9 +1,9 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/MSC_Standalone/Inc/main.h 
-  * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
+  * @file    ./Inc/main.h 
+  * @author  kyChu
+  * @version V1.0.0
+  * @date    26-November-2017
   * @brief   Header for main.c module
   ******************************************************************************
   * @attention
@@ -61,7 +61,6 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void Toggle_Leds(void);
 
 #endif /* __MAIN_H */
 
