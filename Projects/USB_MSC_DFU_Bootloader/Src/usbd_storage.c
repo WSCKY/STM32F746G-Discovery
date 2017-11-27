@@ -53,7 +53,11 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-__IO uint32_t writestatus, readstatus = 0;
+uint8_t TestBuffer[SECTOR_SIZE] = 
+"We choose to go to the moon in this decade and do the other things,\r\n"
+"not because they are easy, but because they are hard.\r\n"
+" -- John F. Kennedy, 1962"
+;
 
 /* USB Mass storage Standard Inquiry Data */
 int8_t STORAGE_Inquirydata[] = { /* 36 */
@@ -124,14 +128,14 @@ int8_t STORAGE_GetCapacity(uint8_t lun, uint32_t *block_num, uint16_t *block_siz
   */
 int8_t STORAGE_IsReady(uint8_t lun)
 {
-  int8_t ret = FATFS_ERROR;
+//  int8_t ret = FATFS_ERROR;
 
-//  if()
-//  {
-      ret = FATFS_OK;
-//  }
+////  if()
+////  {
+//      ret = FATFS_OK;
+////  }
 
-  return ret;
+  return FATFS_OK;
 }
 
 /**
@@ -185,7 +189,12 @@ int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_l
 					}
 				} else {
 					/* DATA IN FLASH */
-					blk_copy_number = blk_len;
+					if(blk_addr == README_SECT_IDX + README_SECT_NUM) {
+						blk_copy_number = 1;
+						USBD_memcpy(buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), TestBuffer, SECTORS_CONV_BYTES(blk_copy_number));
+					} else {
+						blk_copy_number = blk_len;
+					}
 				}
 			}
 			blk_len -= blk_copy_number; blk_addr += blk_copy_number; blk_addr_offset += blk_copy_number;
@@ -204,11 +213,48 @@ int8_t STORAGE_Read(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_l
   */
 int8_t STORAGE_Write(uint8_t lun, uint8_t *buf, uint32_t blk_addr, uint16_t blk_len)
 {
-  int8_t ret = FATFS_ERROR;  
+	uint32_t blk_addr_offset = 0;
+	uint32_t blk_wrte_number = 0;
+	if(lun == 0) {
+		do {
+			if(blk_addr == BOOT_TABLE_SECTOR_IDX) {
+				blk_wrte_number = 1;
+				USBD_memcpy(BOOT_TABLE, buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), BOOT_TABLE_USED_SIZE);
+			} else if(blk_addr < FAT2_TABLE_SECTOR_IDX) {
+				blk_wrte_number = (FAT2_TABLE_SECTOR_IDX - blk_addr > blk_len) ? blk_len : FAT2_TABLE_SECTOR_IDX - blk_addr;
+				USBD_memcpy(FATn_TABLE + SECTOR_IDX_TO_ADDR(blk_addr - FAT1_TABLE_SECTOR_IDX), buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), SECTORS_CONV_BYTES(blk_wrte_number));
+			} else if(blk_addr < ROOT_TABLE_SECTOR_IDX) {
+				blk_wrte_number = (ROOT_TABLE_SECTOR_IDX - blk_addr > blk_len) ? blk_len : ROOT_TABLE_SECTOR_IDX - blk_addr;
+//				USBD_memcpy(FATn_TABLE + SECTOR_IDX_TO_ADDR(blk_addr - FAT2_TABLE_SECTOR_IDX), buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), SECTORS_CONV_BYTES(blk_wrte_number));
+			} else if(blk_addr < FATFS_TOTAL_SECTORS) {
+				blk_wrte_number = (FATFS_TOTAL_SECTORS - blk_addr > blk_len) ? blk_len : FATFS_TOTAL_SECTORS - blk_addr;
+				USBD_memcpy(ROOT_TABLE + SECTOR_IDX_TO_ADDR(blk_addr - ROOT_TABLE_SECTOR_IDX), buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), SECTORS_CONV_BYTES(blk_wrte_number));
+			} else {
+				/* README.TXT */
+				if(blk_addr < README_SECT_IDX + README_SECT_NUM) {
+					if(blk_addr == README_SECT_IDX + README_SECT_NUM - 1) {/* END OF FILE */
+						blk_wrte_number = 1;
+						USBD_memcpy(README_DATA + SECTORS_CONV_BYTES(README_SECT_NUM - 1), buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), README_TAIL_LEN);
+					} else {
+						blk_wrte_number = (README_SECT_IDX + README_SECT_NUM - blk_addr - 1 > blk_len) ? blk_len : README_SECT_IDX + README_SECT_NUM - blk_addr - 1;
+						USBD_memcpy(README_DATA + SECTOR_IDX_TO_ADDR(blk_addr - README_SECT_IDX), buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), SECTORS_CONV_BYTES(blk_wrte_number));
+					}
+				} else {
+					/* DATA IN FLASH */
+					if(blk_addr == README_SECT_IDX + README_SECT_NUM) {
+						blk_wrte_number = 1;
+						USBD_memcpy(TestBuffer, buf + SECTOR_IDX_TO_ADDR(blk_addr_offset), SECTORS_CONV_BYTES(blk_wrte_number));
+					} else {
+						blk_wrte_number = blk_len;
+					}
+				}
+			}
+			blk_len -= blk_wrte_number; blk_addr += blk_wrte_number; blk_addr_offset += blk_wrte_number;
+		} while(blk_len);
+		return FATFS_OK;
+	}
 
-  ret = FATFS_OK;
-
-  return ret;
+  return FATFS_ERROR;
 }
 
 /**
