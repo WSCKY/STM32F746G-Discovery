@@ -70,7 +70,7 @@ CAMERA_DrvTypeDef gc0329_drv =
 
 /* Initialization sequence for GC0329 */
 const unsigned char GC0329_CFG[][2] = {
-  {0xfe, 0x80}, //soft_reset && page select - 0
+  {0xfe, 0xd0}, //soft_reset && page select - 0
   {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
   {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
 	/*---------- Page 0 ----------*/
@@ -86,16 +86,16 @@ const unsigned char GC0329_CFG[][2] = {
   {0x03, 0x02},
   {0x04, 0x40},
 ////////////////////analog////////////////////
-  {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
-  {0x09, 0x00}, //defines the starting row of the pixel array
-  {0x0a, 0x02},
-  {0x0b, 0x00}, //defines the starting column of the pixel array
-  {0x0c, 0x02},
+//  {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
 	/* ---------- Timing ---------- */
   {0x05, 0x00}, //Horizintal blanking, unit pixel clock, default 0x00,         0x02
   {0x06, 0x6a}, //Horizintal blanking, unit pixel clock, default 0x6a,         0x2c
   {0x07, 0x00}, //Vertical blanking, default 0x00
   {0x08, 0x70}, //Vertical blanking, default 0x70      0xb8
+	{0x09, 0x00}, //defines the starting row of the pixel array
+  {0x0a, 0x08},
+  {0x0b, 0x00}, //defines the starting column of the pixel array
+  {0x0c, 0x08},
 	{0x0d, 0x01}, //window height high bit  0x01
 	{0x0e, 0x18}, //window height low 8 bit 0xe8
 	{0x0f, 0x01}, //window width high bit   0x02
@@ -144,21 +144,21 @@ const unsigned char GC0329_CFG[][2] = {
   {0x58, 0xe0}, //out window width[7:0]
 
 ////////////////////DNDD////////////////////
-//  {0x80, 0x07}, // 0xe7 20140915
-//  {0x81, 0xc2}, // 0x22 20140915
-//  {0x82, 0x90}, //DN auto DNDD DEC DNDD //0e //55 jambo
+  {0x80, 0x07}, // 0xe7 20140915
+  {0x81, 0xc2}, // 0x22 20140915
+  {0x82, 0x90}, //DN auto DNDD DEC DNDD //0e //55 jambo
   {0x83, 0x05},
-//  {0x87, 0x40}, //0x4a  20140915
-////////////////////INTPEE////////////////////
-//  {0x90, 0x8c}, //ac
+  {0x87, 0x40}, //0x4a  20140915
+//////////////////INTPEE////////////////////
+  {0x90, 0x8c}, //ac
   {0x92, 0x05},
   {0x94, 0x05},
   {0x95, 0x45}, //0x44
   {0x96, 0x88},
 ////////////////////ASDE////////////////////
 //	/*---------- Page 1 ----------*/
-//  {0xfe, 0x01}, //page select - 1
-//  {0x18, 0x22},
+  {0xfe, 0x01}, //page select - 1
+  {0x18, 0x22},
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
   {0x9c, 0x0a},
@@ -355,10 +355,10 @@ const unsigned char GC0329_CFG[][2] = {
   {0xa7, 0x00},
   {0xa1, 0x3c},
   {0xa2, 0x50},
-	/*---------- Page 0 ----------*/
-  {0xfe, 0x00}, //page select - 0
-	/*---------- Page 1 ----------*/
-  {0xfe, 0x01}, //page select - 1
+//	/*---------- Page 0 ----------*/
+//  {0xfe, 0x00}, //page select - 0
+//	/*---------- Page 1 ----------*/
+//  {0xfe, 0x01}, //page select - 1
   {0x29, 0x00}, //anti-flicker step [11:8]
   {0x2a, 0x60}, //anti-flicker step [7:0]
   {0x2b, 0x02}, //exp level 0  14.28fps
@@ -375,9 +375,12 @@ const unsigned char GC0329_CFG[][2] = {
 //  {0x44, 0xa2},
 	{0x43, 0x00},
 	{0x44, 0xa6}, //output format: RGB565
-	{0x4e, 0x09},
+//	{0x4e, 0x09},
   {0xf0, 0x07}, //pclk_en && hsync_en && vsync_en
   {0xf1, 0x01}, //normal data output enable
+	{0xf3, 0xa8}, //sync & pclk & data -> pull up, PWDN_DN -> pull down.
+	{0xf5, 0x00}, //rec_bandwidth
+	{0xfa, 0x00}, //frequency division number
 };
 
 /**
