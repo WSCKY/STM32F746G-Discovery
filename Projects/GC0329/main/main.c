@@ -77,6 +77,8 @@ int main(void)
   }
 }
 
+void BSP_CAMERA_LineEventCallback(void) {}
+
 /**
   * @brief  System Clock Configuration
   *         The system Clock is configured as follow : 
