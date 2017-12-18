@@ -20,6 +20,7 @@
 
 // USER START (Optionally insert additional includes)
 #include "PMW3901MB.h"
+#include "cpu_utils.h"
 // USER END
 
 #include "DIALOG.h"
@@ -33,8 +34,6 @@
 #define ID_WINDOW_0    (GUI_ID_USER + 0x00)
 #define ID_GRAPH_0    (GUI_ID_USER + 0x01)
 #define ID_TEXT_0    (GUI_ID_USER + 0x02)
-#define ID_TEXT_1    (GUI_ID_USER + 0x03)
-#define ID_TEXT_2    (GUI_ID_USER + 0x04)
 
 
 // USER START (Optionally insert additional defines)
@@ -64,8 +63,6 @@ static const GUI_WIDGET_CREATE_INFO _aDialogCreate[] = {
   { WINDOW_CreateIndirect, "MainFrame", ID_WINDOW_0, 0, 0, 480, 272, 0, 0x0, 0 },
   { GRAPH_CreateIndirect, "Waves", ID_GRAPH_0, 0, 32, 480, 200, 0, 0x0, 0 },
   { TEXT_CreateIndirect, "Motion Waves", ID_TEXT_0, 165, 0, 150, 32, 0, 0x0, 0 },
-  { TEXT_CreateIndirect, "CPULoad:", ID_TEXT_1, 360, 252, 90, 20, 0, 0x0, 0 },
-  { TEXT_CreateIndirect, "Rate:", ID_TEXT_2, 10, 252, 50, 20, 0, 0x0, 0 },
   // USER START (Optionally insert additional widgets)
   // USER END
 };
@@ -128,16 +125,6 @@ static void _cbDialog(WM_MESSAGE * pMsg) {
     TEXT_SetFont(hItem, GUI_FONT_24B_ASCII);
     TEXT_SetTextAlign(hItem, GUI_TA_HCENTER | GUI_TA_VCENTER);
     TEXT_SetTextColor(hItem, 0x00FF0000);
-    //
-    // Initialization of 'CPULoad:'
-    //
-    hItem = WM_GetDialogItem(pMsg->hWin, ID_TEXT_1);
-    TEXT_SetFont(hItem, GUI_FONT_20_ASCII);
-    //
-    // Initialization of 'Rate:'
-    //
-    hItem = WM_GetDialogItem(pMsg->hWin, ID_TEXT_2);
-    TEXT_SetFont(hItem, GUI_FONT_20_ASCII);
     // USER START (Optionally insert additional code for further widget initialization)
     // USER END
     break;
@@ -188,6 +175,7 @@ void MainTask(void) {
 			GRAPH_DATA_YT_AddValue(hData_X, 2 * (((int16_t)p->Delta_X_H << 8) | p->Delta_X_L));
 			GRAPH_DATA_YT_AddValue(hData_Y, 2 * (((int16_t)p->Delta_Y_H << 8) | p->Delta_Y_L));
 		}
+		
 	}
 }
 // USER END
