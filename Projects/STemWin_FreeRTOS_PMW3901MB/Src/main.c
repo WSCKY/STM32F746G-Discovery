@@ -159,17 +159,19 @@ static void Start_Thread(void const *argument)
 //		BSP_LED_Toggle(LED1);
 	}
 }
-uint16_t d_x = 0, d_y = 0;
+int16_t d_x = 0, d_y = 0;
 static void STemWinThread(void const *argument)
 {
 	(void) argument;
-	PMW3901MB_DeltaDataDef *p = 0;
+	PMW3901MB_BurstReportDef *p = 0;
 	for(;;)
 	{
-		osDelay(100);
-		p = ReadDeltaDataRaw();
-		d_x = ((uint16_t)p->Delta_X_H << 8) | p->Delta_X_L;
-		d_y = ((uint16_t)p->Delta_Y_H << 8) | p->Delta_Y_L;
+		osDelay(1);
+		if(PMW3901_MOTION_IS_RDY()) {
+			p = ReadDeltaDataRaw();
+			d_x = ((int16_t)p->Delta_X_H << 8) | p->Delta_X_L;
+			d_y = ((int16_t)p->Delta_Y_H << 8) | p->Delta_Y_L;
+		}
 //		MainTask();
 	}
 }
