@@ -117,7 +117,7 @@ uint8_t PerfOptReg_2[14][2] = {
 {0x40, 0x80}
 };
 
-static PMW3901MB_DeltaDataDef _raw_data = {0};
+static PMW3901MB_BurstReportDef _raw_data = {0};
 /* Private function prototypes -----------------------------------------------*/
 static void PMW3901_GPIO_Init(void);
 static int8_t PMW3901_SPI_Init(void);
@@ -128,9 +128,18 @@ static int8_t PMW3901_WriteReg(uint8_t RegAddr, uint8_t RegData);
 int8_t PMW3901_Init(void)
 {
 	uint8_t i = 0, _rx_data = 0;
+	/* -2- Wait for at least 40ms. */
+	HAL_Delay(50);
 	PMW3901_GPIO_Init();
 	if(PMW3901_SPI_Init() != 0) return -1;
 
+	/* -4- Write 0x5A to Power_Up_Reset register (or alternatively, toggle the NRESET pin). */
+	if(PMW3901_WriteReg(REG_POWER_UP_RESET, 0x5A) != 0) return -1;
+	/* -5- Wait for at least 1ms. */
+	HAL_Delay(1);
+	/* -6- Read from registers 0x02, 0x03, 0x04, 0x05 and 0x06 one time regardless of the motion pin state. */
+	ReadDeltaDataRaw();
+	/* -7- Refer Section '8.2 Performance Optimization Registers' to configure the needed registers in order to achieve optimum performance of the chip. */
 	for(i = 0; i < 59; i ++) {
 		if(PMW3901_WriteReg(PerfOptReg_1[i][0], PerfOptReg_1[i][1]) != 0) return -1;
 		HAL_Delay(1);
@@ -143,6 +152,7 @@ int8_t PMW3901_Init(void)
 	HAL_Delay(5);
 	if(PMW3901_ReadReg(REG_PRODUCT_ID, 1, &_rx_data) != 0) return -1;
 	if(_rx_data != 0x49) return -1;
+	HAL_Delay(1);
 	if(PMW3901_ReadReg(REG_INVERSE_PRODUCT_ID, 1, &_rx_data) != 0) return -1;
 	if(_rx_data != 0xB6) return -1;
 	return 0;
@@ -153,14 +163,18 @@ int8_t PMW3901_VerifyID(void)
 	uint8_t _rx_data = 0;
 	if(PMW3901_ReadReg(REG_PRODUCT_ID, 1, &_rx_data) != 0) return -1;
 	if(_rx_data != 0x49) return -1;
+	HAL_Delay(1);
 	if(PMW3901_ReadReg(REG_INVERSE_PRODUCT_ID, 1, &_rx_data) != 0) return -1;
 	if(_rx_data != 0xB6) return -1;
 	return 0;
 }
 
-PMW3901MB_DeltaDataDef *ReadDeltaDataRaw(void)
+PMW3901MB_BurstReportDef *ReadDeltaDataRaw(void)
 {
-	PMW3901_ReadReg(REG_DELTA_X_L, 4, (uint8_t *)&_raw_data);
+	/*
+	 * Reading the Motion_Burst register activates Burst Mode. PMW3901MB will respond with the motion burst report in order.
+	 */
+	PMW3901_ReadReg(REG_MOTION_BURST, 12, (uint8_t *)&_raw_data);
 	return &_raw_data;
 }
 
@@ -174,9 +188,9 @@ static void PMW3901_GPIO_Init(void)
 	PMW3901_SPI_MISO_GPIO_CLK_ENABLE();
 	PMW3901_SPI_MOSI_GPIO_CLK_ENABLE();
 	/* Enable SPI clock */
-	PMW3901_SPI_CLK_ENABLE(); 
-	
-	/*##-2- Configure peripheral GPIO ##########################################*/  
+	PMW3901_SPI_CLK_ENABLE();
+
+	/*##-2- Configure peripheral GPIO ##########################################*/
 	/* SPI SCK GPIO pin configuration  */
 	GPIO_InitStruct.Pin       = PMW3901_SPI_SCK_PIN;
 	GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
@@ -209,10 +223,21 @@ static void PMW3901_GPIO_Init(void)
 	HAL_GPIO_Init(PMW3901_NRST_GPIO_PORT, &GPIO_InitStruct);
 
 	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Pin = PMW3901_MOTION_PIN;
 	HAL_GPIO_Init(PMW3901_MOTION_GPIO_PORT, &GPIO_InitStruct);
 
+	/* -3- Drive NCS high, and then low to reset the SPI port. */
+	HAL_GPIO_WritePin(PMW3901_SPI_CS_GPIO_PORT, PMW3901_SPI_CS_PIN, GPIO_PIN_SET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(PMW3901_SPI_CS_GPIO_PORT, PMW3901_SPI_CS_PIN, GPIO_PIN_RESET);
+	HAL_Delay(10);
+	HAL_GPIO_WritePin(PMW3901_SPI_CS_GPIO_PORT, PMW3901_SPI_CS_PIN, GPIO_PIN_SET);
+
+	HAL_GPIO_WritePin(PMW3901_NRST_GPIO_PORT, PMW3901_NRST_PIN, GPIO_PIN_RESET);
+	HAL_Delay(10);
 	HAL_GPIO_WritePin(PMW3901_NRST_GPIO_PORT, PMW3901_NRST_PIN, GPIO_PIN_SET);
+	HAL_Delay(10);
 }
 
 static int8_t PMW3901_SPI_Init(void)
@@ -220,7 +245,7 @@ static int8_t PMW3901_SPI_Init(void)
 	/*##-1- Configure the SPI peripheral #######################################*/
   /* Set the SPI parameters */
   SpiHandle.Instance               = PMW3901_SPI;
-  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
+  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64;
   SpiHandle.Init.Direction         = SPI_DIRECTION_2LINES;
   SpiHandle.Init.CLKPhase          = SPI_PHASE_2EDGE;
   SpiHandle.Init.CLKPolarity       = SPI_POLARITY_HIGH;
@@ -257,7 +282,7 @@ static int8_t PMW3901_WriteReg(uint8_t RegAddr, uint8_t RegData)
 {
 	int8_t ret = 0;
 	uint8_t _rx_data = 0;
-	uint8_t _tx_data = RegAddr;
+	uint8_t _tx_data = RegAddr | 0x80;
 	HAL_GPIO_WritePin(PMW3901_SPI_CS_GPIO_PORT, PMW3901_SPI_CS_PIN, GPIO_PIN_RESET);
 
 	if(HAL_SPI_TransmitReceive(&SpiHandle, &_tx_data, &_rx_data, 1, 50) != HAL_OK) ret = -1;
