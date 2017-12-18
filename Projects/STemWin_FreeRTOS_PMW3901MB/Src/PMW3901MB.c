@@ -117,6 +117,8 @@ uint8_t PerfOptReg_2[14][2] = {
 {0x40, 0x80}
 };
 
+static uint8_t _init_done = 0;
+static uint8_t _data_update = 0;
 static PMW3901MB_BurstReportDef _raw_data = {0};
 /* Private function prototypes -----------------------------------------------*/
 static void PMW3901_GPIO_Init(void);
@@ -155,6 +157,7 @@ int8_t PMW3901_Init(void)
 	HAL_Delay(1);
 	if(PMW3901_ReadReg(REG_INVERSE_PRODUCT_ID, 1, &_rx_data) != 0) return -1;
 	if(_rx_data != 0xB6) return -1;
+	_init_done = 1;
 	return 0;
 }
 
@@ -171,11 +174,34 @@ int8_t PMW3901_VerifyID(void)
 
 PMW3901MB_BurstReportDef *ReadDeltaDataRaw(void)
 {
-	/*
-	 * Reading the Motion_Burst register activates Burst Mode. PMW3901MB will respond with the motion burst report in order.
-	 */
-	PMW3901_ReadReg(REG_MOTION_BURST, 12, (uint8_t *)&_raw_data);
 	return &_raw_data;
+}
+
+uint8_t PMW3901_DataUpdated(void)
+{
+	if(_data_update) {
+		_data_update = 0;
+		return 1;
+	}
+	return 0;
+}
+
+/**
+  * @brief  EXTI line detection callbacks.
+  * @param  GPIO_Pin: Specifies the pins connected EXTI line
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_Pin == PMW3901_MOTION_PIN) {
+		if(_init_done) {
+			/*
+			 * Reading the Motion_Burst register activates Burst Mode. PMW3901MB will respond with the motion burst report in order.
+			 */
+			PMW3901_ReadReg(REG_MOTION_BURST, 12, (uint8_t *)&_raw_data);
+			_data_update = 1;
+		}
+	}
 }
 
 static void PMW3901_GPIO_Init(void)
@@ -222,10 +248,14 @@ static void PMW3901_GPIO_Init(void)
 	GPIO_InitStruct.Pin = PMW3901_NRST_PIN;
 	HAL_GPIO_Init(PMW3901_NRST_GPIO_PORT, &GPIO_InitStruct);
 
-	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	/* Configure Motion pin as input with External interrupt */
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Pin = PMW3901_MOTION_PIN;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
 	HAL_GPIO_Init(PMW3901_MOTION_GPIO_PORT, &GPIO_InitStruct);
+	/* Enable and set MOTION EXTI Interrupt to the lowest priority */
+	HAL_NVIC_SetPriority(PMW3901_MOTION_EXTI_IRQn, 0x0F, 0x00);
+	HAL_NVIC_EnableIRQ(PMW3901_MOTION_EXTI_IRQn);
 
 	/* -3- Drive NCS high, and then low to reset the SPI port. */
 	HAL_GPIO_WritePin(PMW3901_SPI_CS_GPIO_PORT, PMW3901_SPI_CS_PIN, GPIO_PIN_SET);

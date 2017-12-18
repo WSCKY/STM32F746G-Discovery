@@ -69,12 +69,14 @@ typedef struct {
 #define PMW3901_MOTION_GPIO_CLK_ENABLE()        __HAL_RCC_GPIOI_CLK_ENABLE()
 #define PMW3901_MOTION_GPIO_CLK_DISABLE()       __HAL_RCC_GPIOI_CLK_DISABLE()
 #define PMW3901_MOTION_PIN                      GPIO_PIN_0
+#define PMW3901_MOTION_EXTI_IRQn                EXTI0_IRQn
 
 /* Exported macro ------------------------------------------------------------*/
 #define PMW3901_MOTION_IS_RDY()                 ((PMW3901_MOTION_GPIO_PORT->IDR & PMW3901_MOTION_PIN) == GPIO_PIN_RESET)
 /* Exported functions ------------------------------------------------------- */
 int8_t PMW3901_Init(void);
 int8_t PMW3901_VerifyID(void);
+uint8_t PMW3901_DataUpdated(void);
 PMW3901MB_BurstReportDef *ReadDeltaDataRaw(void);
 
 #endif /* __PMW3901MB_H */
