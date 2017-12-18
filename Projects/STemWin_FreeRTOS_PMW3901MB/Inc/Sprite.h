@@ -5,7 +5,7 @@
 #include "DIALOG.h"
 #include "gui.h"
 
-#define USE_SPRITE 0
+#define USE_SPRITE 1
 
 void Sprite_Run(void const * argument);
 void SpriteSingleInit(void const * argument);

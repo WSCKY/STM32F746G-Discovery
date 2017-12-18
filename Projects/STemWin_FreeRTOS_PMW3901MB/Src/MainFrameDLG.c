@@ -60,7 +60,7 @@ static GUI_COLOR _aColorData[2] = {
 *       _aDialogCreate
 */
 static const GUI_WIDGET_CREATE_INFO _aDialogCreate[] = {
-  { WINDOW_CreateIndirect, "MainFrame", ID_WINDOW_0, 0, 0, 480, 272, 0, 0x0, 0 },
+  { WINDOW_CreateIndirect, "MainFrame", ID_WINDOW_0, 0, 0, 480, 262, 0, 0x0, 0 },
   { GRAPH_CreateIndirect, "Waves", ID_GRAPH_0, 0, 32, 480, 200, 0, 0x0, 0 },
   { TEXT_CreateIndirect, "Motion Waves", ID_TEXT_0, 165, 0, 150, 32, 0, 0x0, 0 },
   // USER START (Optionally insert additional widgets)
@@ -99,25 +99,25 @@ static void _cbDialog(WM_MESSAGE * pMsg) {
     hItem = WM_GetDialogItem(pMsg->hWin, ID_GRAPH_0);
     GRAPH_SetBorder(hItem, 20, 0, 0, 10);
 		GRAPH_SetLineStyleH(hItem, GUI_LS_DASH);
-	GRAPH_SetLineStyleV(hItem, GUI_LS_DASH);
-	GRAPH_SetGridDistX(hItem, 50); GRAPH_SetGridDistY(hItem, 25);
-	GRAPH_SetGridOffY(hItem, 95);
+		GRAPH_SetLineStyleV(hItem, GUI_LS_DASH);
+		GRAPH_SetGridDistX(hItem, 50); GRAPH_SetGridDistY(hItem, 25);
+		GRAPH_SetGridOffY(hItem, 95);
 		GRAPH_SetGridVis(hItem, 1);
-	WM_BringToBottom(hItem);
+		WM_BringToBottom(hItem);
 
-	hData_X = GRAPH_DATA_YT_Create(_aColorData[0], 460, 0, 0);
-	GRAPH_DATA_YT_SetOffY(hData_X, 95);
-	hData_Y = GRAPH_DATA_YT_Create(_aColorData[1], 460, 0, 0);
-	GRAPH_DATA_YT_SetOffY(hData_Y, 95);
-	GRAPH_AttachData(hItem, hData_X);
-	GRAPH_AttachData(hItem, hData_Y);
+		hData_X = GRAPH_DATA_YT_Create(_aColorData[0], 460, 0, 0);
+		GRAPH_DATA_YT_SetOffY(hData_X, 95);
+		hData_Y = GRAPH_DATA_YT_Create(_aColorData[1], 460, 0, 0);
+		GRAPH_DATA_YT_SetOffY(hData_Y, 95);
+		GRAPH_AttachData(hItem, hData_X);
+		GRAPH_AttachData(hItem, hData_Y);
 
-	_hScaleH = GRAPH_SCALE_Create(196, GUI_TA_VCENTER, GRAPH_SCALE_CF_HORIZONTAL, 20);
-	_hScaleV = GRAPH_SCALE_Create(10, GUI_TA_HCENTER, GRAPH_SCALE_CF_VERTICAL, 20);
-	GRAPH_SCALE_SetOff(_hScaleV, 95);
-	GRAPH_SCALE_SetFactor(_hScaleV, 0.25f);
-	GRAPH_AttachScale(hItem, _hScaleH);
-	GRAPH_AttachScale(hItem, _hScaleV);
+		_hScaleH = GRAPH_SCALE_Create(196, GUI_TA_VCENTER, GRAPH_SCALE_CF_HORIZONTAL, 20);
+		_hScaleV = GRAPH_SCALE_Create(10, GUI_TA_HCENTER, GRAPH_SCALE_CF_VERTICAL, 20);
+		GRAPH_SCALE_SetOff(_hScaleV, 95);
+		GRAPH_SCALE_SetFactor(_hScaleV, 0.25f);
+		GRAPH_AttachScale(hItem, _hScaleH);
+		GRAPH_AttachScale(hItem, _hScaleV);
     //
     // Initialization of 'Motion Waves'
     //
@@ -129,6 +129,12 @@ static void _cbDialog(WM_MESSAGE * pMsg) {
     // USER END
     break;
   // USER START (Optionally insert additional message handling)
+//	case WM_PAINT:
+//		GUI_DispStringAt("MCU Load:", 400, 262); GUI_DispDecMin(osGetCPUUsage());
+//	break;
+//	case WM_TIMER:
+//		WM_RestartTimer(pMsg->Data.v, 1000);
+//	break;
   // USER END
   default:
     WM_DefaultProc(pMsg);
@@ -167,15 +173,17 @@ PMW3901MB_BurstReportDef *p;
 *       MainTask
 */
 void MainTask(void) {
-	CreateMainFrame();
+	WM_HWIN hWin = CreateMainFrame();
+//	WM_HTIMER hTimer = WM_CreateTimer(hWin, 0, 1000, 0);
 	p = ReadDeltaDataRaw();
+	GUI_SetFont(&GUI_Font8x8);
 	while(1) {
 		GUI_Delay(10);
 		if(PMW3901_DataUpdated()) {
 			GRAPH_DATA_YT_AddValue(hData_X, 2 * (((int16_t)p->Delta_X_H << 8) | p->Delta_X_L));
 			GRAPH_DATA_YT_AddValue(hData_Y, 2 * (((int16_t)p->Delta_Y_H << 8) | p->Delta_Y_L));
 		}
-		
+		GUI_DispStringAt("MCU Load:", 400, 264); GUI_DispDecMin(osGetCPUUsage());
 	}
 }
 // USER END
