@@ -43,6 +43,7 @@
 #include "stm32f7xx_hal.h"
 #include "GUI.h"
 #include "Sprite.h"
+#include "cmsis_os.h"
 
 /* EVAL includes component */
 #include "stm32746g_discovery.h"

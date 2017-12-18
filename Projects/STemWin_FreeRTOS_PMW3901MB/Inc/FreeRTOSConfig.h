@@ -87,8 +87,8 @@
 
 
 #define configUSE_PREEMPTION			1
-#define configUSE_IDLE_HOOK			0
-#define configUSE_TICK_HOOK			0
+#define configUSE_IDLE_HOOK			  1
+#define configUSE_TICK_HOOK			  1
 #define configCPU_CLOCK_HZ			( SystemCoreClock )
 #define configTICK_RATE_HZ			( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES			( 8 )
@@ -107,7 +107,7 @@
 #define configUSE_COUNTING_SEMAPHORES	        1
 #define configGENERATE_RUN_TIME_STATS	        0
 
-#define configENABLE_BACKWARD_COMPATIBILITY 0
+#define configENABLE_BACKWARD_COMPATIBILITY 1
 
 /* Co-routine definitions. */
 #define configUSE_CO_ROUTINES 		        0
@@ -167,6 +167,11 @@ standard names. */
 /* IMPORTANT: This define MUST be commented when used with STM32Cube firmware, 
               to prevent overwriting SysTick_Handler defined within STM32Cube HAL */
 /* #define xPortSysTickHandler SysTick_Handler */
+
+#define traceTASK_SWITCHED_IN()  extern void StartIdleMonitor(void); \
+                                         StartIdleMonitor()
+#define traceTASK_SWITCHED_OUT() extern void EndIdleMonitor(void); \
+                                         EndIdleMonitor()
 
 #endif /* FREERTOS_CONFIG_H */
 
