@@ -17,11 +17,19 @@
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct {
+	uint8_t Motion;
+	uint8_t Observation;
 	uint8_t Delta_X_L;
 	uint8_t Delta_X_H;
 	uint8_t Delta_Y_L;
 	uint8_t Delta_Y_H;
-} PMW3901MB_DeltaDataDef;
+	uint8_t SQUAL;
+	uint8_t RawData_Sum;
+	uint8_t Maximun_RawData;
+	uint8_t Minimum_RawData;
+	uint8_t Shutter_Upper;
+	uint8_t Shutter_Lower;
+} PMW3901MB_BurstReportDef;
 /* Exported constants --------------------------------------------------------*/
 /* User can use this section to tailor PMW3901_SPI instance used and associated
    resources */
@@ -63,10 +71,11 @@ typedef struct {
 #define PMW3901_MOTION_PIN                      GPIO_PIN_0
 
 /* Exported macro ------------------------------------------------------------*/
+#define PMW3901_MOTION_IS_RDY()                 ((PMW3901_MOTION_GPIO_PORT->IDR & PMW3901_MOTION_PIN) == GPIO_PIN_RESET)
 /* Exported functions ------------------------------------------------------- */
 int8_t PMW3901_Init(void);
 int8_t PMW3901_VerifyID(void);
-PMW3901MB_DeltaDataDef *ReadDeltaDataRaw(void);
+PMW3901MB_BurstReportDef *ReadDeltaDataRaw(void);
 
 #endif /* __PMW3901MB_H */
 
