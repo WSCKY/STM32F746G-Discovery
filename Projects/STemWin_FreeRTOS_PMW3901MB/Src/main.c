@@ -159,7 +159,7 @@ static void Start_Thread(void const *argument)
 //		BSP_LED_Toggle(LED1);
 	}
 }
-int16_t d_x = 0, d_y = 0;
+
 static void STemWinThread(void const *argument)
 {
 	(void) argument;
