@@ -132,9 +132,11 @@ static void _cbDialog(WM_MESSAGE * pMsg) {
 //	case WM_PAINT:
 //		GUI_DispStringAt("MCU Load:", 400, 262); GUI_DispDecMin(osGetCPUUsage());
 //	break;
-//	case WM_TIMER:
-//		WM_RestartTimer(pMsg->Data.v, 1000);
-//	break;
+	case WM_TIMER:
+		GUI_SetFont(&GUI_Font8x8);
+		GUI_DispStringAt("MCU Load:", 392, 264); GUI_DispDecMin(osGetCPUUsage()); GUI_DispChar('%');
+		WM_RestartTimer(pMsg->Data.v, 1000);
+	break;
   // USER END
   default:
     WM_DefaultProc(pMsg);
@@ -174,16 +176,14 @@ PMW3901MB_BurstReportDef *p;
 */
 void MainTask(void) {
 	WM_HWIN hWin = CreateMainFrame();
-//	WM_HTIMER hTimer = WM_CreateTimer(hWin, 0, 1000, 0);
+	WM_HTIMER hTimer = WM_CreateTimer(hWin, 0, 1000, 0);
 	p = ReadDeltaDataRaw();
-	GUI_SetFont(&GUI_Font8x8);
 	while(1) {
 		GUI_Delay(10);
 		if(PMW3901_DataUpdated()) {
 			GRAPH_DATA_YT_AddValue(hData_X, 2 * (((int16_t)p->Delta_X_H << 8) | p->Delta_X_L));
 			GRAPH_DATA_YT_AddValue(hData_Y, 2 * (((int16_t)p->Delta_Y_H << 8) | p->Delta_Y_L));
 		}
-		GUI_DispStringAt("MCU Load:", 400, 264); GUI_DispDecMin(osGetCPUUsage());
 	}
 }
 // USER END
