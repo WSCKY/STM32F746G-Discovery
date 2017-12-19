@@ -44,12 +44,13 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 uint8_t GUI_Initialized = 0;
-osThreadId TaskThreadId, STemWinId, TSC_TimerId;
+osThreadId TaskThreadId, STemWinId, TSC_TimerId, FPS_TimerId;
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 static void Start_Thread(void const *argument);
 static void STemWinThread(void const *argument);
 static void TimerCallback(void const *n);
+static void FPS_TimerCallback(void const *n);
 extern void MainTask(void);
 static void CPU_CACHE_Enable(void);
 
@@ -141,9 +142,14 @@ static void Start_Thread(void const *argument)
 	/* Create Touch screen Timer */
 	osTimerDef(TS_Timer, TimerCallback);
 	TSC_TimerId = osTimerCreate(osTimer(TS_Timer), osTimerPeriodic, (void *)0);
+	/* Create FPS Timer */
+	osTimerDef(FPS_Timer, FPS_TimerCallback);
+	FPS_TimerId = osTimerCreate(osTimer(FPS_Timer), osTimerPeriodic, (void *)0);
 
 	/* Start the TS Timer */
 	osTimerStart(TSC_TimerId, 20);
+	/* Start the FPS Timer */
+	osTimerStart(FPS_TimerId, 1000);
 
 #if USE_SPRITE
 	osThreadDef(GUI_Sprite, Sprite_Run, osPriorityNormal, 0, 3 * configMINIMAL_STACK_SIZE);
@@ -166,6 +172,11 @@ static void STemWinThread(void const *argument)
 	{
 		MainTask();
 	}
+}
+
+static void FPS_TimerCallback(void const *n)
+{
+	PMW3901_FrameCntTimer_1s_Callback();
 }
 
 /**
