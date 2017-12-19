@@ -119,6 +119,8 @@ uint8_t PerfOptReg_2[14][2] = {
 
 static uint8_t _init_done = 0;
 static uint8_t _data_update = 0;
+static uint32_t _frame_cnt = 0;
+static uint32_t _frame_rate = 0;
 static PMW3901MB_BurstReportDef _raw_data = {0};
 /* Private function prototypes -----------------------------------------------*/
 static void PMW3901_GPIO_Init(void);
@@ -186,6 +188,17 @@ uint8_t PMW3901_DataUpdated(void)
 	return 0;
 }
 
+uint32_t GetPMW3901DataRate(void)
+{
+	return _frame_rate;
+}
+
+void PMW3901_FrameCntTimer_1s_Callback(void)
+{
+	_frame_rate = _frame_cnt;
+	_frame_cnt = 0;
+}
+
 /**
   * @brief  EXTI line detection callbacks.
   * @param  GPIO_Pin: Specifies the pins connected EXTI line
@@ -200,6 +213,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			 */
 			PMW3901_ReadReg(REG_MOTION_BURST, 12, (uint8_t *)&_raw_data);
 			_data_update = 1;
+			_frame_cnt ++;
 		}
 	}
 }

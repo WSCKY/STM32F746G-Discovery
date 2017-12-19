@@ -77,6 +77,8 @@ typedef struct {
 int8_t PMW3901_Init(void);
 int8_t PMW3901_VerifyID(void);
 uint8_t PMW3901_DataUpdated(void);
+uint32_t GetPMW3901DataRate(void);
+void PMW3901_FrameCntTimer_1s_Callback(void);
 PMW3901MB_BurstReportDef *ReadDeltaDataRaw(void);
 
 #endif /* __PMW3901MB_H */
