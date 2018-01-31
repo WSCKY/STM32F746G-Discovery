@@ -36,14 +36,19 @@
 /** @defgroup GC0329_Private_Defines
   * @{
   */
-#define IMG_WIDTH                      480
-#define IMG_HEIGHT                     272
+#define WINDOW_WIDTH                   600
+#define WINDOW_HEIGHT                  480
+
+#define IMG_WIDTH                      120
+#define IMG_HEIGHT                     120
 
 #define OUTPUT_FORMAT_RGB565           0x06
 #define OUTPUT_FORMAT_ONLY_Y           0x11
 #define OUTPUT_FORMAT_ONLY_R           0x14
 #define OUTPUT_FORMAT_ONLY_G           0x15
 #define OUTPUT_FORMAT_ONLY_B           0x16
+
+#define IMG_FORMAT                     OUTPUT_FORMAT_ONLY_Y
 
 /**
   * @}
@@ -84,6 +89,8 @@ const unsigned char GC0329_CFG[][2] = {
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
   {0x70, 0x40}, //global gain, 2.6 bits
+	{0x71, 0xF0}, //Controlled by AEC, can be manually controlled when disable AEC
+	{0x72, 0xF0}, //Controlled by AEC, can be manually controlled when disable AEC
   {0x73, 0x80}, //R channel pre gain, 1.7 bits
   {0x74, 0x80}, //G1 channel pre gain, 1.7 bits
   {0x75, 0x80}, //G2 channel pre gain, 1.7 bits
@@ -91,23 +98,23 @@ const unsigned char GC0329_CFG[][2] = {
   {0x77, 0x50}, //red channel gain from auto white balancing, 2.6 bits
   {0x78, 0x40}, //green channel gain from auto white balancing, 2.6 bits
   {0x79, 0x48}, //blue channel gain from auto white balancing, 2.6 bits
-  {0x03, 0x02},
-  {0x04, 0x40},
+  {0x03, 0x00}, //Exposure[11:8], use line processing time as unit.
+  {0x04, 0xA0}, //Exposure[7:0], controlled by AEC if AEC is in function
 ////////////////////analog////////////////////
 //  {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
 	/* ---------- Timing ---------- */
-  {0x05, 0x00}, //Horizintal blanking, unit pixel clock, default 0x00,         0x02
+  {0x05, 0x01}, //Horizintal blanking, unit pixel clock, default 0x00,         0x02
   {0x06, 0x6a}, //Horizintal blanking, unit pixel clock, default 0x6a,         0x2c
-  {0x07, 0x00}, //Vertical blanking, default 0x00
+  {0x07, 0x01}, //Vertical blanking, default 0x00
   {0x08, 0x70}, //Vertical blanking, default 0x70      0xb8
 	{0x09, 0x00}, //defines the starting row of the pixel array
   {0x0a, 0x08},
   {0x0b, 0x00}, //defines the starting column of the pixel array
   {0x0c, 0x08},
-	{0x0d, (IMG_HEIGHT >> 8)}, //window height high bit  0x01
-	{0x0e, (IMG_HEIGHT & 0xFF) + 8}, //window height low 8 bit 0xe8
-	{0x0f, (IMG_WIDTH >> 8)}, //window width high bit   0x02
-	{0x10, (IMG_WIDTH & 0xFF) + 8}, //window width low bit    0x88
+	{0x0d, (WINDOW_HEIGHT >> 8)}, //window height high bit  0x01
+	{0x0e, (WINDOW_HEIGHT & 0xFF) + 8}, //window height low 8 bit 0xe8
+	{0x0f, (WINDOW_WIDTH >> 8)}, //window width high bit   0x02
+	{0x10, (WINDOW_WIDTH & 0xFF) + 8}, //window width low bit    0x88
 	{0x11, 0x2a}, //sh_delay, default: 0x2a
 	{0x12, 0x04}, //Vs_st, number of Row time from frame start to first HSYNC valid, default: 0x04
 	{0x13, 0x04}, //Vs_et, number of Row time from last HSYNC valid to frame end Notice the relation with VB, VB > vs_st+vs_et, default: 0x04
@@ -142,7 +149,7 @@ const unsigned char GC0329_CFG[][2] = {
   {0x41, 0x24},//[5]skin detection
   {0x42, 0xfa},//disable ABS
   {0x46, 0x02},
-  {0x4b, 0xca},
+  {0x4b, 0xcb}, //[1] AWB_gain_mode, [0] more boundary mode
   {0x4d, 0x01},
 //  {0x4f, 0x01},
   {0x70, 0x40}, //global gain, 2.6 bits
@@ -150,6 +157,16 @@ const unsigned char GC0329_CFG[][2] = {
   {0x56, (IMG_HEIGHT & 0xFF)}, //out window height[7:0]
 	{0x57, (IMG_WIDTH >> 8)}, //out window width[9:8]
   {0x58, (IMG_WIDTH & 0xFF)}, //out window width[7:0]
+	{0x59, 0x22}, //[7:4] subsample row ratio, [3:0] subsample col ratio
+	{0x5a, 0x3e}, //[5]use or cut row [4]use or cut col [3]vacancy zero mode [2]remove 00 mode [1]neighbor average mode [0]subsample extend pclk
+	{0x5b, 0x00}, //[7:4] sub_row_num1 [3:0] sub_row_num2
+	{0x5c, 0x00}, //[7:4] sub_row_num3 [3:0] sub_row_num4
+	{0x5d, 0x00}, //[7:4] sub_row_num5 [3:0] sub_row_num6
+	{0x5e, 0x00}, //[7:4] sub_row_num7 [3:0] sub_row_num8
+	{0x5f, 0x00}, //[7:4] sub_col_num1 [3:0] sub_col_num2
+	{0x60, 0x00}, //[7:4] sub_col_num3 [3:0] sub_col_num4
+	{0x61, 0x00}, //[7:4] sub_col_num5 [3:0] sub_col_num6
+	{0x62, 0x00}, //[7:4] sub_col_num7 [3:0] sub_col_num8
 
 ////////////////////DNDD////////////////////
   {0x80, 0x07}, // 0xe7 20140915
@@ -221,7 +238,11 @@ const unsigned char GC0329_CFG[][2] = {
   {0xb7, 0x48},
   {0xb8, 0xf0},
 // crop
-  {0x50, 0x01},
+  {0x50, 0x01}, // [7:1] NA, [0] crop out window mode.
+	{0x51, 0x00},
+	{0x52, 0x00},
+	{0x53, 0x00},
+	{0x54, 0x00},
 ////////////////////YCP////////////////////
 //	/*---------- Page 0 ----------*/
 //  {0xfe, 0x00}, //page select - 0
@@ -382,7 +403,7 @@ const unsigned char GC0329_CFG[][2] = {
 ////////////////////out ///////////////////
 //  {0x44, 0xa2},
 	{0x43, 0x00},
-	{0x44, 0x20 | OUTPUT_FORMAT_RGB565}, //output format: RGB565
+	{0x44, 0x00 | IMG_FORMAT}, //output format: only Y
 //	{0x4e, 0x09},
   {0xf0, 0x07}, //pclk_en && hsync_en && vsync_en
   {0xf1, 0x01}, //normal data output enable
