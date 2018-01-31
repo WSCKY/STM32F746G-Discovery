@@ -89,9 +89,9 @@ const unsigned char GC0329_CFG[][2] = {
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
 	{0x4f, 0x01}, //[0] AEC enable
-  {0x70, 0xF0}, //global gain, 2.6 bits
-	{0x71, 0x00}, //Controlled by AEC, can be manually controlled when disable AEC
-	{0x72, 0x00}, //Controlled by AEC, can be manually controlled when disable AEC
+  {0x70, 0x40}, //global gain, 2.6 bits
+	{0x71, 0x40}, //Controlled by AEC, can be manually controlled when disable AEC
+	{0x72, 0x40}, //Controlled by AEC, can be manually controlled when disable AEC
   {0x73, 0x80}, //R channel pre gain, 1.7 bits
   {0x74, 0x80}, //G1 channel pre gain, 1.7 bits
   {0x75, 0x80}, //G2 channel pre gain, 1.7 bits
