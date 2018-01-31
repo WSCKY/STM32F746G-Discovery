@@ -249,10 +249,12 @@ const unsigned char GC0329_CFG[][2] = {
   {0xd0, 0x40},
   {0xd1, 0x28},
   {0xd2, 0x28},
-
-  {0xd3, 0x40}, //cont 0x40
+  /* luma contrast control */
+  {0xd3, 0x80}, // luma_contrast, can be adjusted via contrast center
   {0xd5, 0x00},
 
+	{0xd9, 0xe3}, // [7:4]skin grightness high threshold, [3:0]skin brightness low threshold
+	
   {0xdd, 0x14},
   {0xde, 0x34},
 ////////////////////AEC////////////////////
@@ -387,8 +389,8 @@ const unsigned char GC0329_CFG[][2] = {
 //  {0xfe, 0x00}, //page select - 0
 //	/*---------- Page 1 ----------*/
 //  {0xfe, 0x01}, //page select - 1
-  {0x29, 0x00}, //anti-flicker step [11:8]
-  {0x2a, 0x60}, //anti-flicker step [7:0]
+  {0x29, 0x04}, //anti-flicker step [11:8]
+  {0x2a, 0x96}, //anti-flicker step [7:0]
   {0x2b, 0x02}, //exp level 0  14.28fps
   {0x2c, 0xa0},
   {0x2d, 0x03}, //exp level 1  12.50fps
