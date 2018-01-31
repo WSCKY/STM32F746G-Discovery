@@ -101,7 +101,7 @@ typedef enum
   */    
 uint8_t BSP_CAMERA_Init(uint32_t Resolution);  
 uint8_t BSP_CAMERA_DeInit(void);
-void    BSP_CAMERA_ContinuousStart(uint8_t *buff);
+void    BSP_CAMERA_ContinuousStart(uint8_t *buff, uint32_t size);
 void    BSP_CAMERA_SnapshotStart(uint8_t *buff, uint32_t size);
 void    BSP_CAMERA_Suspend(void);
 void    BSP_CAMERA_Resume(void);
