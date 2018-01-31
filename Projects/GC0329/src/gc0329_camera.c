@@ -217,10 +217,10 @@ void BSP_CAMERA_ContinuousStart(uint8_t *buff)
   * @param  buff: pointer to the camera output buffer
   * @retval None
   */
-void BSP_CAMERA_SnapshotStart(uint8_t *buff)
+void BSP_CAMERA_SnapshotStart(uint8_t *buff, uint32_t size)
 { 
   /* Start the camera capture */
-  HAL_DCMI_Start_DMA(&hDcmiHandler, DCMI_MODE_SNAPSHOT, (uint32_t)buff, GetSize(CameraCurrentResolution));
+  HAL_DCMI_Start_DMA(&hDcmiHandler, DCMI_MODE_SNAPSHOT, (uint32_t)buff, size);
 }
 
 /**
