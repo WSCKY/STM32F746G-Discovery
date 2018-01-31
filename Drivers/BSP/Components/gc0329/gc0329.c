@@ -36,6 +36,14 @@
 /** @defgroup GC0329_Private_Defines
   * @{
   */
+#define IMG_WIDTH                      480
+#define IMG_HEIGHT                     272
+
+#define OUTPUT_FORMAT_RGB565           0x06
+#define OUTPUT_FORMAT_ONLY_Y           0x11
+#define OUTPUT_FORMAT_ONLY_R           0x14
+#define OUTPUT_FORMAT_ONLY_G           0x15
+#define OUTPUT_FORMAT_ONLY_B           0x16
 
 /**
   * @}
@@ -96,10 +104,10 @@ const unsigned char GC0329_CFG[][2] = {
   {0x0a, 0x08},
   {0x0b, 0x00}, //defines the starting column of the pixel array
   {0x0c, 0x08},
-	{0x0d, 0x01}, //window height high bit  0x01
-	{0x0e, 0x18}, //window height low 8 bit 0xe8
-	{0x0f, 0x01}, //window width high bit   0x02
-	{0x10, 0xe8}, //window width low bit    0x88
+	{0x0d, (IMG_HEIGHT >> 8)}, //window height high bit  0x01
+	{0x0e, (IMG_HEIGHT & 0xFF) + 8}, //window height low 8 bit 0xe8
+	{0x0f, (IMG_WIDTH >> 8)}, //window width high bit   0x02
+	{0x10, (IMG_WIDTH & 0xFF) + 8}, //window width low bit    0x88
 	{0x11, 0x2a}, //sh_delay, default: 0x2a
 	{0x12, 0x04}, //Vs_st, number of Row time from frame start to first HSYNC valid, default: 0x04
 	{0x13, 0x04}, //Vs_et, number of Row time from last HSYNC valid to frame end Notice the relation with VB, VB > vs_st+vs_et, default: 0x04
@@ -138,10 +146,10 @@ const unsigned char GC0329_CFG[][2] = {
   {0x4d, 0x01},
 //  {0x4f, 0x01},
   {0x70, 0x40}, //global gain, 2.6 bits
-  {0x55, 0x01}, //out window height[8]
-  {0x56, 0x10}, //out window height[7:0]
-	{0x57, 0x01}, //out window width[9:8]
-  {0x58, 0xe0}, //out window width[7:0]
+  {0x55, (IMG_HEIGHT >> 8)}, //out window height[8]
+  {0x56, (IMG_HEIGHT & 0xFF)}, //out window height[7:0]
+	{0x57, (IMG_WIDTH >> 8)}, //out window width[9:8]
+  {0x58, (IMG_WIDTH & 0xFF)}, //out window width[7:0]
 
 ////////////////////DNDD////////////////////
   {0x80, 0x07}, // 0xe7 20140915
@@ -374,7 +382,7 @@ const unsigned char GC0329_CFG[][2] = {
 ////////////////////out ///////////////////
 //  {0x44, 0xa2},
 	{0x43, 0x00},
-	{0x44, 0xa6}, //output format: RGB565
+	{0x44, 0x20 | OUTPUT_FORMAT_RGB565}, //output format: RGB565
 //	{0x4e, 0x09},
   {0xf0, 0x07}, //pclk_en && hsync_en && vsync_en
   {0xf1, 0x01}, //normal data output enable
