@@ -88,9 +88,10 @@ const unsigned char GC0329_CFG[][2] = {
   {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
-  {0x70, 0x40}, //global gain, 2.6 bits
-	{0x71, 0xF0}, //Controlled by AEC, can be manually controlled when disable AEC
-	{0x72, 0xF0}, //Controlled by AEC, can be manually controlled when disable AEC
+	{0x4f, 0x01}, //[0] AEC enable
+  {0x70, 0xF0}, //global gain, 2.6 bits
+	{0x71, 0x00}, //Controlled by AEC, can be manually controlled when disable AEC
+	{0x72, 0x00}, //Controlled by AEC, can be manually controlled when disable AEC
   {0x73, 0x80}, //R channel pre gain, 1.7 bits
   {0x74, 0x80}, //G1 channel pre gain, 1.7 bits
   {0x75, 0x80}, //G2 channel pre gain, 1.7 bits
@@ -99,7 +100,7 @@ const unsigned char GC0329_CFG[][2] = {
   {0x78, 0x40}, //green channel gain from auto white balancing, 2.6 bits
   {0x79, 0x48}, //blue channel gain from auto white balancing, 2.6 bits
   {0x03, 0x00}, //Exposure[11:8], use line processing time as unit.
-  {0x04, 0xA0}, //Exposure[7:0], controlled by AEC if AEC is in function
+  {0x04, 0x40}, //Exposure[7:0], controlled by AEC if AEC is in function
 ////////////////////analog////////////////////
 //  {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
 	/* ---------- Timing ---------- */
@@ -151,8 +152,6 @@ const unsigned char GC0329_CFG[][2] = {
   {0x46, 0x02},
   {0x4b, 0xcb}, //[1] AWB_gain_mode, [0] more boundary mode
   {0x4d, 0x01},
-//  {0x4f, 0x01},
-  {0x70, 0x40}, //global gain, 2.6 bits
   {0x55, (IMG_HEIGHT >> 8)}, //out window height[8]
   {0x56, (IMG_HEIGHT & 0xFF)}, //out window height[7:0]
 	{0x57, (IMG_WIDTH >> 8)}, //out window width[9:8]
