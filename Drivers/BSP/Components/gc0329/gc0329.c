@@ -189,8 +189,8 @@ const unsigned char GC0329_CFG[][2] = {
   {0xa0, 0xaf},
   {0xa2, 0xff},
   {0xa4, 0x30}, //50 jambo
-  {0xa5, 0x31},
-  {0xa7, 0x35},
+  {0xa5, 0x31}, //[7:4] auto saturation low limit, [3:0] sub saturation slope
+  {0xa7, 0x60}, //ASDE low luminance value threshold
 ////////////////////RGB gamma////////////////////
 //	/*---------- Page 0 ----------*/
 //  {0xfe, 0x00}, //page select - 0
