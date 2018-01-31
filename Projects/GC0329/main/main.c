@@ -31,6 +31,7 @@ __attribute__((__aligned__(4))) static uint8_t BinaryImgBuffer[120][120] = {0};
 
 static uint8_t ImageUpdateFlag = 0;
 
+uint32_t millis = 0, img_t = 0, last_millis = 0, sec = 0;
 uint32_t _cnt_x = 0, _cnt_y = 0;
 /* Global extern variables ---------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -57,6 +58,7 @@ int main(void)
   SystemClock_Config();
 
   BSP_LED_Init(LED1);
+	MCU_TIMs_Init();
   /* Initialize the LCD */
   BSP_LCD_Init();
   /* Initialize the LCD Layers */
@@ -101,15 +103,19 @@ int main(void)
 					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((BIN_IMG_POS_Y + _cnt_y) * 480) + BIN_IMG_POS_X + _cnt_x) << 2)) = (BinaryImgBuffer[_cnt_y][_cnt_x]) ? 0xFFFFFFFF : 0;
 				}
 			}
-
+			sec = _Get_Seconds();
+millis = _Get_Millis();
+img_t = millis - last_millis;
+last_millis = millis;
 			BSP_LED_Toggle(LED1);
+			ImageUpdateFlag = 0;
 			BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 60 * 60);
 		}
   }
 }
 
 void BSP_CAMERA_LineEventCallback(void) {}
-	void BSP_CAMERA_VsyncEventCallback(void) {}
+void BSP_CAMERA_VsyncEventCallback(void) {}
 void BSP_CAMERA_FrameEventCallback(void)
 {
 	uint8_t i = 0, j = 0;

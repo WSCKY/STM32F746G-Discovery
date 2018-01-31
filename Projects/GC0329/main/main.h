@@ -24,6 +24,8 @@
 #include "stm32746g_discovery.h"
 #include "stm32746g_discovery_lcd.h"
 #include "gc0329_camera.h"
+	 
+#include "SystemTimeCounter.h"
 
 /* Exported types -------------------------------------------------------------*/
 /* Exported variables ---------------------------------------------------------*/
