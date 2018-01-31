@@ -65,8 +65,13 @@ int main(void)
 
 	if(BSP_CAMERA_Init(RESOLUTION_R480x272) == 0)
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Success!");
-	else
+	else {
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Failed!");
+		while(1) {
+			BSP_LED_Toggle(LED1);
+			HAL_Delay(50);
+		}
+	}
 
 	BSP_CAMERA_ContinuousStart((uint8_t *)LCD_FB_START_ADDRESS);
 
