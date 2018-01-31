@@ -27,11 +27,10 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 __attribute__((__aligned__(4))) static uint8_t CameraImgBuffer[120][120] = {0};
-__attribute__((__aligned__(4))) static uint8_t BinaryImgBuffer[120][120] = {0};
 
 static uint8_t ImageUpdateFlag = 0;
 
-uint32_t millis = 0, img_t = 0, last_millis = 0, sec = 0;
+uint32_t millis = 0, img_t = 0, last_millis = 0;
 uint32_t _cnt_x = 0, _cnt_y = 0;
 /* Global extern variables ---------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -89,8 +88,6 @@ int main(void)
 	
 	BSP_LCD_SetTextColor(LCD_COLOR_RED);
 	BSP_LCD_DrawRect(ORG_IMG_POS_X-1, ORG_IMG_POS_Y-1, 121, 121);
-	BSP_LCD_DrawRect(BIN_IMG_POS_X-1, BIN_IMG_POS_Y-1, 121, 121);
-//	BSP_LCD_DrawRect(EDG_IMG_POS_X-1, EDG_IMG_POS_Y-1, 121, 121);
 
 //	BSP_CAMERA_ContinuousStart((uint8_t *)LCD_FB_START_ADDRESS);
 	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 60 * 60);
@@ -98,15 +95,11 @@ int main(void)
   while(1)
   {
 		if(ImageUpdateFlag == 1) {
-			for(_cnt_y = 0; _cnt_y < 120; _cnt_y ++) {
-				for(_cnt_x = 0; _cnt_x < 120; _cnt_x ++) {
-					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((BIN_IMG_POS_Y + _cnt_y) * 480) + BIN_IMG_POS_X + _cnt_x) << 2)) = (BinaryImgBuffer[_cnt_y][_cnt_x]) ? 0xFFFFFFFF : 0;
-				}
-			}
-			sec = _Get_Seconds();
-millis = _Get_Millis();
-img_t = millis - last_millis;
-last_millis = millis;
+
+			millis = _Get_Millis();
+			img_t = millis - last_millis;
+			last_millis = millis;
+
 			BSP_LED_Toggle(LED1);
 			ImageUpdateFlag = 0;
 			BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 60 * 60);
@@ -123,12 +116,10 @@ void BSP_CAMERA_FrameEventCallback(void)
 	for(i = 0; i < 120; i ++) {
 		for(j = 0; j < 120; j ++) {
 			d = CameraImgBuffer[j][i];
-			BinaryImgBuffer[j][i] = (d >> 7) ? 0xFF : 0x00;
 			*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((ORG_IMG_POS_Y + j) * 480) + ORG_IMG_POS_X + i) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);
 		}
 	}
 	ImageUpdateFlag =1;
-//	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 120 * 60);
 }
 
 /**
