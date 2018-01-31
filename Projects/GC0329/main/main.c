@@ -18,8 +18,20 @@
   * LCD Frame buffer start address : starts at beginning of SDRAM
   */
 #define LCD_FRAME_BUFFER          SDRAM_DEVICE_ADDR
+
+#define ORG_IMG_POS_X        40
+#define ORG_IMG_POS_Y        76
+
+#define BIN_IMG_POS_X        180
+#define BIN_IMG_POS_Y        76
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+__attribute__((__aligned__(4))) static uint8_t CameraImgBuffer[120][120] = {0};
+__attribute__((__aligned__(4))) static uint8_t BinaryImgBuffer[120][120] = {0};
+
+static uint8_t ImageUpdateFlag = 0;
+
+uint32_t _cnt_x = 0, _cnt_y = 0;
 /* Global extern variables ---------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
@@ -48,8 +60,8 @@ int main(void)
   /* Initialize the LCD */
   BSP_LCD_Init();
   /* Initialize the LCD Layers */
-//  BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FRAME_BUFFER);
-	BSP_LCD_LayerRgb565Init(LTDC_ACTIVE_LAYER, LCD_FRAME_BUFFER);
+  BSP_LCD_LayerDefaultInit(LTDC_ACTIVE_LAYER, LCD_FRAME_BUFFER);
+//	BSP_LCD_LayerRgb565Init(LTDC_ACTIVE_LAYER, LCD_FRAME_BUFFER);
 
   /* Set LCD Foreground Layer  */
   BSP_LCD_SelectLayer(LTDC_ACTIVE_LAYER);
@@ -57,11 +69,11 @@ int main(void)
   BSP_LCD_SetFont(&LCD_DEFAULT_FONT);
 
   /* Clear the LCD */
-  BSP_LCD_SetBackColor(LCD_COLOR_WHITE);
-  BSP_LCD_Clear(LCD_COLOR_WHITE);
+  BSP_LCD_SetBackColor(LCD_COLOR_BLACK);
+  BSP_LCD_Clear(LCD_COLOR_BLACK);
 
   /* Set the LCD Text Color */
-  BSP_LCD_SetTextColor(LCD_COLOR_DARKBLUE);
+  BSP_LCD_SetTextColor(LCD_COLOR_WHITE);
 
 	if(BSP_CAMERA_Init(RESOLUTION_R480x272) == 0)
 		BSP_LCD_DisplayStringAtLine(0, (uint8_t *)"Camera Init Success!");
@@ -72,17 +84,46 @@ int main(void)
 			HAL_Delay(50);
 		}
 	}
+	
+	BSP_LCD_SetTextColor(LCD_COLOR_RED);
+	BSP_LCD_DrawRect(ORG_IMG_POS_X-1, ORG_IMG_POS_Y-1, 121, 121);
+	BSP_LCD_DrawRect(BIN_IMG_POS_X-1, BIN_IMG_POS_Y-1, 121, 121);
+//	BSP_LCD_DrawRect(EDG_IMG_POS_X-1, EDG_IMG_POS_Y-1, 121, 121);
 
-	BSP_CAMERA_ContinuousStart((uint8_t *)LCD_FB_START_ADDRESS);
+//	BSP_CAMERA_ContinuousStart((uint8_t *)LCD_FB_START_ADDRESS);
+	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 60 * 60);
 
   while(1)
   {
-	  BSP_LED_Toggle(LED1);
-	  HAL_Delay(200);
+		if(ImageUpdateFlag == 1) {
+			for(_cnt_y = 0; _cnt_y < 120; _cnt_y ++) {
+				for(_cnt_x = 0; _cnt_x < 120; _cnt_x ++) {
+					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((BIN_IMG_POS_Y + _cnt_y) * 480) + BIN_IMG_POS_X + _cnt_x) << 2)) = (BinaryImgBuffer[_cnt_y][_cnt_x]) ? 0xFFFFFFFF : 0;
+				}
+			}
+
+			BSP_LED_Toggle(LED1);
+			BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 60 * 60);
+		}
   }
 }
 
 void BSP_CAMERA_LineEventCallback(void) {}
+	void BSP_CAMERA_VsyncEventCallback(void) {}
+void BSP_CAMERA_FrameEventCallback(void)
+{
+	uint8_t i = 0, j = 0;
+	uint32_t d = 0;
+	for(i = 0; i < 120; i ++) {
+		for(j = 0; j < 120; j ++) {
+			d = CameraImgBuffer[j][i];
+			BinaryImgBuffer[j][i] = (d >> 7) ? 0xFF : 0x00;
+			*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((ORG_IMG_POS_Y + j) * 480) + ORG_IMG_POS_X + i) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);
+		}
+	}
+	ImageUpdateFlag =1;
+//	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, 120 * 60);
+}
 
 /**
   * @brief  System Clock Configuration
