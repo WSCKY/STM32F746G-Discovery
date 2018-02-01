@@ -111,8 +111,6 @@
   */ 
 DCMI_HandleTypeDef  hDcmiHandler;
 CAMERA_DrvTypeDef   *camera_drv;
-/* Camera current resolution naming (QQVGA, VGA, ...) */
-static uint32_t CameraCurrentResolution;
 
 /* Camera module I2C HW address */
 static uint32_t CameraHwAddress;
@@ -123,7 +121,7 @@ static uint32_t CameraHwAddress;
 /** @defgroup STM32746G_DISCOVERY_CAMERA_Private_FunctionPrototypes STM32746G_DISCOVERY_CAMERA Private Function Prototypes
   * @{
   */
-static uint32_t GetSize(uint32_t resolution);
+
 /**
   * @}
   */ 
@@ -138,7 +136,7 @@ static uint32_t GetSize(uint32_t resolution);
   *         naming QQVGA, QVGA, VGA ...
   * @retval Camera status
   */
-uint8_t BSP_CAMERA_Init(uint32_t Resolution)
+uint8_t BSP_CAMERA_Init(void)
 {
   DCMI_HandleTypeDef *phdcmi;
   uint8_t status = CAMERA_ERROR;
@@ -151,9 +149,9 @@ uint8_t BSP_CAMERA_Init(uint32_t Resolution)
   phdcmi->Init.CaptureRate      = DCMI_CR_ALL_FRAME;
   phdcmi->Init.HSPolarity       = DCMI_HSPOLARITY_LOW;
   phdcmi->Init.SynchroMode      = DCMI_SYNCHRO_HARDWARE;
-  phdcmi->Init.VSPolarity       = DCMI_VSPOLARITY_HIGH;
+  phdcmi->Init.VSPolarity       = DCMI_VSPOLARITY_LOW;
   phdcmi->Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B;
-  phdcmi->Init.PCKPolarity      = DCMI_PCKPOLARITY_RISING;
+  phdcmi->Init.PCKPolarity      = DCMI_PCKPOLARITY_RISING;//DCMI_PCKPOLARITY_FALLING;//
   phdcmi->Instance              = DCMI;
 
   /* Power up camera */
@@ -171,10 +169,8 @@ uint8_t BSP_CAMERA_Init(uint32_t Resolution)
     HAL_DCMI_Init(phdcmi);
 
     /* Camera Module Initialization via I2C to the wanted 'Resolution' */
-		camera_drv->Init(CameraHwAddress, Resolution);
+		camera_drv->Init(CameraHwAddress, 0);
 		HAL_DCMI_DisableCROP(phdcmi);
-
-    CameraCurrentResolution = Resolution;
 
     /* Return CAMERA_OK status */
     status = CAMERA_OK;
@@ -310,6 +306,13 @@ void BSP_CAMERA_PwrDown(void)
   HAL_GPIO_WritePin(GPIOH, GPIO_PIN_13, GPIO_PIN_SET);
 }
 
+void BSP_CAMERA_Config(uint32_t d3, uint32_t d1, uint32_t d2)
+{
+	if(camera_drv->Config != NULL) {
+    camera_drv->Config(CameraHwAddress, d3, d1, d2);
+  }
+}
+
 /**
   * @brief  Configures the camera contrast and brightness.
   * @param  contrast_level: Contrast level
@@ -369,7 +372,7 @@ void BSP_CAMERA_ColorEffectConfig(uint32_t Effect)
   if(camera_drv->Config != NULL)
   {
     camera_drv->Config(CameraHwAddress, CAMERA_COLOR_EFFECT, Effect, 0);
-  }  
+  }
 }
 
 void BSP_CAMERA_IRQHandler(void)
@@ -380,47 +383,6 @@ void BSP_CAMERA_IRQHandler(void)
 void BSP_CAMERA_DMA_IRQHandler(void)
 {
 	HAL_DMA_IRQHandler(hDcmiHandler.DMA_Handle);
-}
-
-/**
-  * @brief  Get the capture size in pixels unit.
-  * @param  resolution: the current resolution.
-  * @retval capture size in pixels unit.
-  */
-static uint32_t GetSize(uint32_t resolution)
-{ 
-  uint32_t size = 0;
-  
-  /* Get capture size */
-  switch (resolution)
-  {
-  case CAMERA_R160x120:
-    {
-      size =  0x2580;
-    }
-    break;    
-  case CAMERA_R320x240:
-    {
-      size =  0x9600;
-    }
-    break;
-  case CAMERA_R480x272:
-    {
-      size =  0xFF00;
-    }
-    break;
-  case CAMERA_R640x480:
-    {
-      size =  0x25800;
-    }    
-    break;
-  default:
-    {
-      break;
-    }
-  }
-  
-  return size;
 }
 
 /**

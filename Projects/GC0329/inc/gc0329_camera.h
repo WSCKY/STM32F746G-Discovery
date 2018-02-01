@@ -99,7 +99,7 @@ typedef enum
 /** @addtogroup STM32746G_DISCOVERY_CAMERA_Exported_Functions
   * @{
   */    
-uint8_t BSP_CAMERA_Init(uint32_t Resolution);  
+uint8_t BSP_CAMERA_Init(void);  
 uint8_t BSP_CAMERA_DeInit(void);
 void    BSP_CAMERA_ContinuousStart(uint8_t *buff, uint32_t size);
 void    BSP_CAMERA_SnapshotStart(uint8_t *buff, uint32_t size);
@@ -113,6 +113,7 @@ void    BSP_CAMERA_VsyncEventCallback(void);
 void    BSP_CAMERA_FrameEventCallback(void);
 void    BSP_CAMERA_ErrorCallback(void);
 
+void BSP_CAMERA_Config(uint32_t d3, uint32_t d1, uint32_t d2);
 /* Camera features functions prototype */
 void    BSP_CAMERA_ContrastBrightnessConfig(uint32_t contrast_level, uint32_t brightness_level);
 void    BSP_CAMERA_BlackWhiteConfig(uint32_t Mode);
