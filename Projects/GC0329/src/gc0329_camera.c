@@ -149,7 +149,7 @@ uint8_t BSP_CAMERA_Init(void)
   phdcmi->Init.CaptureRate      = DCMI_CR_ALL_FRAME;
   phdcmi->Init.HSPolarity       = DCMI_HSPOLARITY_LOW;
   phdcmi->Init.SynchroMode      = DCMI_SYNCHRO_HARDWARE;
-  phdcmi->Init.VSPolarity       = DCMI_VSPOLARITY_LOW;
+  phdcmi->Init.VSPolarity       = DCMI_VSPOLARITY_HIGH;
   phdcmi->Init.ExtendedDataMode = DCMI_EXTEND_DATA_8B;
   phdcmi->Init.PCKPolarity      = DCMI_PCKPOLARITY_RISING;//DCMI_PCKPOLARITY_FALLING;//
   phdcmi->Instance              = DCMI;
