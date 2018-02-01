@@ -43,6 +43,9 @@
 /** @defgroup GC0329_Exported_Constants
   * @{
   */
+#define __CAM_MIN(a,b)                 (((a) < (b)) ? (a) : (b))
+#define __CAM_MAX(a,b)                 (((a) > (b)) ? (a) : (b))
+#define __CAM_LIMIT(x,min,max)         (__CAM_MIN(__CAM_MAX(min, x), max))
 /**
   * @brief  GC0329 ID
   */
@@ -55,43 +58,21 @@
 
 /* GC0329 Registers definition */
 #define GC0329_SENSOR_ID_REG           0xFB
-//#define OV9655_SENSOR_COM7              0x12
-//#define OV9655_SENSOR_TSLB              0x3A
-//#define OV9655_SENSOR_MTX1              0x4F
-//#define OV9655_SENSOR_MTX2              0x50
-//#define OV9655_SENSOR_MTX3              0x51
-//#define OV9655_SENSOR_MTX4              0x52
-//#define OV9655_SENSOR_MTX5              0x53
-//#define OV9655_SENSOR_MTX6              0x54
-//#define OV9655_SENSOR_BRTN              0x55
-//#define OV9655_SENSOR_CNST1             0x56
-//#define OV9655_SENSOR_CNST2             0x57
 
-/** 
- * @brief  OV9655 Features Parameters  
- */
-//#define OV9655_BRIGHTNESS_LEVEL0        0xB0     /* Brightness level -2         */
-//#define OV9655_BRIGHTNESS_LEVEL1        0x98     /* Brightness level -1         */
-//#define OV9655_BRIGHTNESS_LEVEL2        0x00     /* Brightness level 0          */
-//#define OV9655_BRIGHTNESS_LEVEL3        0x18     /* Brightness level +1         */
-//#define OV9655_BRIGHTNESS_LEVEL4        0x30     /* Brightness level +2         */
+#define WINDOW_WIDTH                   640
+#define WINDOW_HEIGHT                  480
 
-//#define OV9655_BLACK_WHITE_BW           0xCC000000000000  /* Black and white effect      */
-//#define OV9655_BLACK_WHITE_NEGATIVE     0xEC808000008080  /* Negative effect             */
-//#define OV9655_BLACK_WHITE_BW_NEGATIVE  0xEC000000000000  /* BW and Negative effect      */
-//#define OV9655_BLACK_WHITE_NORMAL       0xCC808000008080  /* Normal effect               */
+#define IMG_WIDTH                      120
+#define IMG_HEIGHT                     120
 
-//#define OV9655_CONTRAST_LEVEL0          0x30     /* Contrast level -2           */
-//#define OV9655_CONTRAST_LEVEL1          0x38     /* Contrast level -1           */
-//#define OV9655_CONTRAST_LEVEL2          0x40     /* Contrast level 0            */
-//#define OV9655_CONTRAST_LEVEL3          0x50     /* Contrast level +1           */
-//#define OV9655_CONTRAST_LEVEL4          0x60     /* Contrast level +2           */
+#define SUB_SAMPLE_WIDTH_MIN           (1)
+#define SUB_SAMPLE_HEIGHT_MIN          (1)
+#define SUB_SAMPLE_WIDTH_MAX           (WINDOW_WIDTH / IMG_WIDTH)
+#define SUB_SAMPLE_HEIGHT_MAX          (WINDOW_HEIGHT / IMG_HEIGHT)
 
-//#define OV9655_COLOR_EFFECT_NONE        0xCC808000008080  /* No color effect             */
-//#define OV9655_COLOR_EFFECT_ANTIQUE     0xCC000020F00000  /* Antique effect              */
-//#define OV9655_COLOR_EFFECT_BLUE        0xCC000000000060  /* Blue effect                 */
-//#define OV9655_COLOR_EFFECT_GREEN       0xCC000000008000  /* Green effect                */
-//#define OV9655_COLOR_EFFECT_RED         0xCC600000000000  /* Red effect                  */
+#define SUB_SAMPLE_WIDTH               __CAM_LIMIT(2, SUB_SAMPLE_WIDTH_MIN, SUB_SAMPLE_WIDTH_MAX)
+#define SUB_SAMPLE_HEIGHT              __CAM_LIMIT(2, SUB_SAMPLE_HEIGHT_MIN, SUB_SAMPLE_HEIGHT_MAX)
+
 /**
   * @}
   */

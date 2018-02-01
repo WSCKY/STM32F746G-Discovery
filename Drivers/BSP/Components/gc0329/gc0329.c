@@ -36,11 +36,6 @@
 /** @defgroup GC0329_Private_Defines
   * @{
   */
-#define WINDOW_WIDTH                   600
-#define WINDOW_HEIGHT                  480
-
-#define IMG_WIDTH                      120
-#define IMG_HEIGHT                     120
 
 #define OUTPUT_FORMAT_RGB565           0x06
 #define OUTPUT_FORMAT_ONLY_Y           0x11
@@ -105,22 +100,22 @@ const unsigned char GC0329_CFG[][2] = {
 //  {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
 	/* ---------- Timing ---------- */
   {0x05, 0x01}, //Horizintal blanking, unit pixel clock, default 0x00,         0x02
-  {0x06, 0x6a}, //Horizintal blanking, unit pixel clock, default 0x6a,         0x2c
-  {0x07, 0x01}, //Vertical blanking, default 0x00
+  {0x06, 0x0a}, //Horizintal blanking, unit pixel clock, default 0x6a,         0x2c
+  {0x07, 0x00}, //Vertical blanking, default 0x00
   {0x08, 0x70}, //Vertical blanking, default 0x70      0xb8
 	{0x09, 0x00}, //defines the starting row of the pixel array
   {0x0a, 0x08},
   {0x0b, 0x00}, //defines the starting column of the pixel array
   {0x0c, 0x08},
-	{0x0d, (WINDOW_HEIGHT >> 8)}, //window height high bit  0x01
+	{0x0d, (WINDOW_HEIGHT >> 8) & 0x01}, //window height high bit  0x01
 	{0x0e, (WINDOW_HEIGHT & 0xFF) + 8}, //window height low 8 bit 0xe8
-	{0x0f, (WINDOW_WIDTH >> 8)}, //window width high bit   0x02
+	{0x0f, (WINDOW_WIDTH >> 8) & 0x03}, //window width high bit   0x02
 	{0x10, (WINDOW_WIDTH & 0xFF) + 8}, //window width low bit    0x88
 	{0x11, 0x2a}, //sh_delay, default: 0x2a
 	{0x12, 0x04}, //Vs_st, number of Row time from frame start to first HSYNC valid, default: 0x04
 	{0x13, 0x04}, //Vs_et, number of Row time from last HSYNC valid to frame end Notice the relation with VB, VB > vs_st+vs_et, default: 0x04
 
-  {0x17, 0x00}, //0x14                                                     /**********/
+  {0x17, 0x00}, //[1]clk_delay_en, [0] NA
   {0x19, 0x05}, //Reserved
   {0x1b, 0x24},
   {0x1c, 0x04},
@@ -149,15 +144,29 @@ const unsigned char GC0329_CFG[][2] = {
   {0x40, 0xff},
   {0x41, 0x24},//[5]skin detection
   {0x42, 0xfa},//disable ABS
-  {0x46, 0x02},
+  {0x46, 0x37},//Synchronize signal output mode
   {0x4b, 0xcb}, //[1] AWB_gain_mode, [0] more boundary mode
   {0x4d, 0x01},
-  {0x55, (IMG_HEIGHT >> 8)}, //out window height[8]
+	// crop
+	/* ((((WINDOW_HEIGHT - IMG_HEIGHT) >> 1) / SUB_SAMPLE_HEIGHT) >> 8) & 0x01 */
+	/* (((WINDOW_HEIGHT - IMG_HEIGHT) >> 1) / SUB_SAMPLE_HEIGHT) & 0xFF */
+	/* ((((WINDOW_WIDTH - IMG_WIDTH) >> 1) / SUB_SAMPLE_WIDTH) >> 8) & 0x03 */
+	/* (((WINDOW_WIDTH - IMG_WIDTH) >> 1) / SUB_SAMPLE_WIDTH) & 0xFF */
+	/*
+	(((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1)
+	(((WINDOW_WIDTH / SUB_SAMPLE_WIDTH) - IMG_WIDTH) >> 1)
+	*/
+  {0x50, 0x01}, // [7:1] NA, [0] crop out window mode.0x00},
+	{0x51, ((((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) >> 8) & 0x01}, // [1:0]Crop_win_y1[9:8], Bit[9]: 0 -> [8:0] is valid, forward; 1 -> [5:0] is valid, backward
+	{0x52, (((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) & 0xFF}, // Crop_win_y1[7:0]
+	{0x53, ((((WINDOW_WIDTH / SUB_SAMPLE_WIDTH) - IMG_WIDTH) >> 1) >> 8) & 0x03}, // [2:0]Crop_win_x1[10:8], Bit[10]: 0 -> [9:0] is valid, forward; 1 -> [3:0] is valid, backward
+	{0x54, (((WINDOW_WIDTH / SUB_SAMPLE_WIDTH) - IMG_WIDTH) >> 1) & 0xFF}, // Crop_win_x1[7:0]
+  {0x55, (IMG_HEIGHT >> 8) & 0x01}, //out window height[8]
   {0x56, (IMG_HEIGHT & 0xFF)}, //out window height[7:0]
-	{0x57, (IMG_WIDTH >> 8)}, //out window width[9:8]
+	{0x57, (IMG_WIDTH >> 8) & 0x03}, //out window width[9:8]
   {0x58, (IMG_WIDTH & 0xFF)}, //out window width[7:0]
-	{0x59, 0x22}, //[7:4] subsample row ratio, [3:0] subsample col ratio
-	{0x5a, 0x3e}, //[5]use or cut row [4]use or cut col [3]vacancy zero mode [2]remove 00 mode [1]neighbor average mode [0]subsample extend pclk
+	{0x59, (SUB_SAMPLE_HEIGHT << 4) | (SUB_SAMPLE_WIDTH & 0x0F)}, //[7:4] subsample row ratio, [3:0] subsample col ratio
+	{0x5a, 0x0e}, //[5]use or cut row [4]use or cut col [3]vacancy zero mode [2]remove 00 mode [1]neighbor average mode [0]subsample extend pclk
 	{0x5b, 0x00}, //[7:4] sub_row_num1 [3:0] sub_row_num2
 	{0x5c, 0x00}, //[7:4] sub_row_num3 [3:0] sub_row_num4
 	{0x5d, 0x00}, //[7:4] sub_row_num5 [3:0] sub_row_num6
@@ -236,12 +245,6 @@ const unsigned char GC0329_CFG[][2] = {
   {0xb6, 0xfa},
   {0xb7, 0x48},
   {0xb8, 0xf0},
-// crop
-  {0x50, 0x01}, // [7:1] NA, [0] crop out window mode.
-	{0x51, 0x00},
-	{0x52, 0x00},
-	{0x53, 0x00},
-	{0x54, 0x00},
 ////////////////////YCP////////////////////
 //	/*---------- Page 0 ----------*/
 //  {0xfe, 0x00}, //page select - 0
@@ -389,16 +392,32 @@ const unsigned char GC0329_CFG[][2] = {
 //  {0xfe, 0x00}, //page select - 0
 //	/*---------- Page 1 ----------*/
 //  {0xfe, 0x01}, //page select - 1
-  {0x29, 0x04}, //anti-flicker step [11:8]
+  {0x29, 0x00}, //anti-flicker step [11:8]
   {0x2a, 0x96}, //anti-flicker step [7:0]
-  {0x2b, 0x02}, //exp level 0  14.28fps
-  {0x2c, 0xa0},
-  {0x2d, 0x03}, //exp level 1  12.50fps
-  {0x2e, 0x00},
-  {0x2f, 0x03}, //exp level 2  10.00fps
-  {0x30, 0xc0},
-  {0x31, 0x05}, //exp level 3  7.14fps
-  {0x32, 0x40},
+/*
+	// windows(240 * 240), image(120 * 120)
+	0x000 -> 59.5243Hz
+	0x100 -> 59.5243Hz
+	0x1ac -> 50.0672Hz
+	0x1ca -> 46.7876Hz
+	0x200 -> 41.8530Hz
+	0x218 -> 39.9790Hz
+	0x2ca -> 30.0122Hz
+	0x300 -> 27.9020Hz
+	0x3c0 -> 22.3216Hz
+	0x400 -> 20.9265Hz
+	0x42f -> 20.0082Hz
+	*/
+  {0x2b, 0x01}, //exp level 0  50fps
+  {0x2c, 0xac},
+  {0x2d, 0x02}, //exp level 1  40fps
+  {0x2e, 0x18},
+  {0x2f, 0x02}, //exp level 2  30fps
+  {0x30, 0xca},
+  {0x31, 0x04}, //exp level 3  20fps
+  {0x32, 0x2f},
+	{0x33, 0x21}, //[5:4] Max level setting, [3:0] exp_min[11:8]
+	{0x34, 0x00}, //exp_min[7:0]
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
 ////////////////////out ///////////////////
@@ -410,7 +429,7 @@ const unsigned char GC0329_CFG[][2] = {
   {0xf1, 0x01}, //normal data output enable
 	{0xf3, 0xa8}, //sync & pclk & data -> pull up, PWDN_DN -> pull down.
 	{0xf5, 0x00}, //rec_bandwidth
-	{0xfa, 0x00}, //frequency division number
+//	{0xfa, 0x00}, //frequency division number
 };
 
 /**
@@ -456,46 +475,11 @@ void gc0329_Init(uint16_t DeviceAddr, uint32_t resolution)
   */
 void gc0329_Config(uint16_t DeviceAddr, uint32_t feature, uint32_t value, uint32_t brightness_value)
 {
-//  uint8_t tslb, mtx1, mtx2, mtx3, mtx4, mtx5, mtx6;
-//  uint64_t value_tmp;
-//  uint32_t br_value;
-
-//  /* Convert the input value into GC0329 parameters */
-//  value_tmp = gc0329_ConvertValue(feature, value);
-//  br_value = (uint32_t)gc0329_ConvertValue(CAMERA_CONTRAST_BRIGHTNESS, brightness_value);
-
-//  switch(feature)
-//  {
-//  case CAMERA_CONTRAST_BRIGHTNESS:
-//    {
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_BRTN, br_value);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_CNST1, value_tmp);
-//      break;
-//    }
-//  case CAMERA_BLACK_WHITE:
-//  case CAMERA_COLOR_EFFECT:
-//    {
-//      tslb = (uint8_t)(value_tmp >> 48);
-//      mtx1 = (uint8_t)(value_tmp >> 40);
-//      mtx2 = (uint8_t)(value_tmp >> 32);
-//      mtx3 = (uint8_t)(value_tmp >> 24);
-//      mtx4 = (uint8_t)(value_tmp >> 16);
-//      mtx5 = (uint8_t)(value_tmp >> 8);
-//      mtx6 = (uint8_t)(value_tmp);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_TSLB, tslb);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_MTX1, mtx1);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_MTX2, mtx2);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_MTX3, mtx3);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_MTX4, mtx4);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_MTX5, mtx5);
-//      CAMERA_IO_Write(DeviceAddr, OV9655_SENSOR_MTX6, mtx6);
-//      break;
-//    }
-//  default:
-//    {
-//      break;
-//    }
-//  }
+	CAMERA_IO_Write(DeviceAddr, 0x51, (value >> 8) & 0x01);
+	CAMERA_IO_Write(DeviceAddr, 0x52, value & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x53, (brightness_value >> 8) & 0x03);
+	CAMERA_IO_Write(DeviceAddr, 0x54, brightness_value & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x59, feature & 0xFF);
 }
 
 /**
@@ -511,158 +495,6 @@ uint16_t gc0329_ReadID(uint16_t DeviceAddr)
   /* Get the camera ID */
   return (CAMERA_IO_Read(DeviceAddr, GC0329_SENSOR_ID_REG));
 }
-
-/******************************************************************************
-                            Static Functions
-*******************************************************************************/
-/**
-  * @brief  Convert input values into GC0329 parameters.
-  * @param  feature: Camera feature to be configured
-  * @param  value: Value to be configured
-  * @retval The converted value
-  */
-//static uint64_t gc0329_ConvertValue(uint32_t feature, uint32_t value)
-//{
-//  uint64_t ret = 0;
-
-//  switch(feature)
-//  {
-//  case CAMERA_BLACK_WHITE:
-//    {
-//      switch(value)
-//      {
-//      case CAMERA_BLACK_WHITE_BW:
-//        {
-//          ret =  OV9655_BLACK_WHITE_BW;
-//          break;
-//        }
-//      case CAMERA_BLACK_WHITE_NEGATIVE:
-//        {
-//          ret =  OV9655_BLACK_WHITE_NEGATIVE;
-//          break;
-//        }
-//      case CAMERA_BLACK_WHITE_BW_NEGATIVE:
-//        {
-//          ret =  OV9655_BLACK_WHITE_BW_NEGATIVE;
-//          break;
-//        }
-//      case CAMERA_BLACK_WHITE_NORMAL:
-//        {
-//          ret =  OV9655_BLACK_WHITE_NORMAL;
-//          break;
-//        }
-//      default:
-//        {
-//          ret =  OV9655_BLACK_WHITE_NORMAL;
-//          break;
-//        }
-//      }
-//      break;
-//    }
-//  case CAMERA_CONTRAST_BRIGHTNESS:
-//    {
-//      switch(value)
-//      {
-//      case CAMERA_BRIGHTNESS_LEVEL0:
-//        {
-//          ret =  OV9655_BRIGHTNESS_LEVEL0;
-//          break;
-//        }
-//      case CAMERA_BRIGHTNESS_LEVEL1:
-//        {
-//          ret =  OV9655_BRIGHTNESS_LEVEL1;
-//          break;
-//        }
-//      case CAMERA_BRIGHTNESS_LEVEL2:
-//        {
-//          ret =  OV9655_BRIGHTNESS_LEVEL2;
-//          break;
-//        }
-//      case CAMERA_BRIGHTNESS_LEVEL3:
-//        {
-//          ret =  OV9655_BRIGHTNESS_LEVEL3;
-//          break;
-//        }
-//      case CAMERA_BRIGHTNESS_LEVEL4:
-//        {
-//          ret =  OV9655_BRIGHTNESS_LEVEL4;
-//          break;
-//        }
-//      case CAMERA_CONTRAST_LEVEL0:
-//        {
-//          ret =  OV9655_CONTRAST_LEVEL0;
-//          break;
-//        }
-//      case CAMERA_CONTRAST_LEVEL1:
-//        {
-//          ret =  OV9655_CONTRAST_LEVEL1;
-//          break;
-//        }
-//      case CAMERA_CONTRAST_LEVEL2:
-//        {
-//          ret =  OV9655_CONTRAST_LEVEL2;
-//          break;
-//        }
-//      case CAMERA_CONTRAST_LEVEL3:
-//        {
-//          ret =  OV9655_CONTRAST_LEVEL3;
-//          break;
-//        }
-//      case CAMERA_CONTRAST_LEVEL4:
-//        {
-//          ret =  OV9655_CONTRAST_LEVEL4;
-//          break;
-//        }
-//      default:
-//        {
-//          ret =  OV9655_CONTRAST_LEVEL0;
-//          break;
-//        }
-//      }
-//      break;
-//    }
-//  case CAMERA_COLOR_EFFECT:
-//    {
-//      switch(value)
-//      {
-//      case CAMERA_COLOR_EFFECT_ANTIQUE:
-//        {
-//          ret =  OV9655_COLOR_EFFECT_ANTIQUE;
-//          break;
-//        }
-//      case CAMERA_COLOR_EFFECT_BLUE:
-//        {
-//          ret =  OV9655_COLOR_EFFECT_BLUE;
-//          break;
-//        }
-//      case CAMERA_COLOR_EFFECT_GREEN:
-//        {
-//          ret =  OV9655_COLOR_EFFECT_GREEN;
-//          break;
-//        }
-//      case CAMERA_COLOR_EFFECT_RED:
-//        {
-//          ret =  OV9655_COLOR_EFFECT_RED;
-//          break;
-//        }
-//      case CAMERA_COLOR_EFFECT_NONE:
-//      default:
-//        {
-//          ret =  OV9655_COLOR_EFFECT_NONE;
-//          break;
-//        }
-//      }
-//      break;
-//    default:
-//      {
-//        ret = 0;
-//        break;
-//      }
-//    }
-//  }
-
-//  return ret;
-//}
 
 /**
   * @}
