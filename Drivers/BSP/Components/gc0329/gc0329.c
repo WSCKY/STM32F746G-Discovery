@@ -79,43 +79,44 @@ CAMERA_DrvTypeDef gc0329_drv =
 /* Initialization sequence for GC0329 */
 const unsigned char GC0329_CFG[][2] = {
   {0xfe, 0xd0}, //soft_reset && page select - 0
+////////////////////analog////////////////////
   {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
   {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
+	{0xfa, 0x00}, //frequency division number
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
+
 	{0x4f, 0x01}, //[0] AEC enable
-  {0x70, 0x40}, //global gain, 2.6 bits
+	{0x70, 0x40}, //global gain, 2.6 bits
 	{0x71, 0x40}, //Controlled by AEC, can be manually controlled when disable AEC
 	{0x72, 0x40}, //Controlled by AEC, can be manually controlled when disable AEC
-  {0x73, 0x80}, //R channel pre gain, 1.7 bits
+  {0x03, 0x00}, //Exposure[11:8], use line processing time as unit.
+  {0x04, 0x96}, //Exposure[7:0], controlled by AEC if AEC is in function
+	{0x73, 0x80}, //R channel pre gain, 1.7 bits
   {0x74, 0x80}, //G1 channel pre gain, 1.7 bits
   {0x75, 0x80}, //G2 channel pre gain, 1.7 bits
-  {0x76, 0x80}, //B channel pre gain, 1.7 bits //80 jambo
+  {0x76, 0x80}, //B channel pre gain, 1.7 bits
   {0x77, 0x50}, //red channel gain from auto white balancing, 2.6 bits
   {0x78, 0x40}, //green channel gain from auto white balancing, 2.6 bits
   {0x79, 0x48}, //blue channel gain from auto white balancing, 2.6 bits
-  {0x03, 0x00}, //Exposure[11:8], use line processing time as unit.
-  {0x04, 0x40}, //Exposure[7:0], controlled by AEC if AEC is in function
-////////////////////analog////////////////////
-//  {0xfc, 0x16}, //digital clock enable && da25_en && da18_en
 	/* ---------- Timing ---------- */
-  {0x05, 0x01}, //Horizintal blanking, unit pixel clock, default 0x00,         0x02
-  {0x06, 0x0a}, //Horizintal blanking, unit pixel clock, default 0x6a,         0x2c
-  {0x07, 0x00}, //Vertical blanking, default 0x00
-  {0x08, 0x70}, //Vertical blanking, default 0x70      0xb8
-	{0x09, 0x00}, //defines the starting row of the pixel array
-  {0x0a, 0x08},
-  {0x0b, 0x00}, //defines the starting column of the pixel array
-  {0x0c, 0x08},
-	{0x0d, (WINDOW_HEIGHT >> 8) & 0x01}, //window height high bit  0x01
-	{0x0e, (WINDOW_HEIGHT & 0xFF) + 8}, //window height low 8 bit 0xe8
-	{0x0f, (WINDOW_WIDTH >> 8) & 0x03}, //window width high bit   0x02
-	{0x10, (WINDOW_WIDTH & 0xFF) + 8}, //window width low bit    0x88
+  {0x05, 0x00}, //Horizintal blanking, unit pixel clock, default 0x00.
+  {0x06, 0x6a}, //Horizintal blanking, unit pixel clock, default 0x6a.
+  {0x07, 0x00}, //Vertical blanking, default 0x00.
+  {0x08, 0x70}, //Vertical blanking, default 0x70.
+	{0x09, (ROW_START_OFFSET >> 8) & 0x01}, //defines the starting row of the pixel array
+  {0x0a, ROW_START_OFFSET & 0xFF},
+  {0x0b, (COL_START_OFFSET >> 8) & 0x03}, //defines the starting column of the pixel array
+  {0x0c, COL_START_OFFSET & 0xFF},
+	{0x0d, ((WINDOW_HEIGHT + 8) >> 8) & 0x01}, //window height high 1 bit
+	{0x0e, (WINDOW_HEIGHT + 8) & 0xFF}, //window height low 8 bit
+	{0x0f, ((WINDOW_WIDTH + 8) >> 8) & 0x03}, //window width high 2 bit
+	{0x10, (WINDOW_WIDTH + 8) & 0xFF}, //window width low 8 bit
 	{0x11, 0x2a}, //sh_delay, default: 0x2a
 	{0x12, 0x04}, //Vs_st, number of Row time from frame start to first HSYNC valid, default: 0x04
 	{0x13, 0x04}, //Vs_et, number of Row time from last HSYNC valid to frame end Notice the relation with VB, VB > vs_st+vs_et, default: 0x04
 
-  {0x17, 0x00}, //[1]clk_delay_en, [0] NA
+  {0x17, 0x83}, //[7] HSYNC always; [5:4] CFA sequence; [3:2] dark CFA sequence; [1] Updown (y-axis/height swap); [0] mirror (x-axis/width swap);
   {0x19, 0x05}, //Reserved
   {0x1b, 0x24},
   {0x1c, 0x04},
@@ -125,38 +126,30 @@ const unsigned char GC0329_CFG[][2] = {
   {0x21, 0x40}, //Reserved //0x48
   {0x22, 0xba},
   {0x23, 0x22},
-  {0x24, 0x16},
+  {0x24, 0x3f},
 //////////////////blk////////////////////
-  {0x26, 0xf7}, //BLK
-  {0x28, 0x7f}, //BLK limit
-  {0x29, 0x00},
-  {0x32, 0x00}, //04 darkc
-  {0x33, 0x20}, //blk ratio
-  {0x34, 0x20},
-  {0x35, 0x20},
-  {0x36, 0x20},
+  {0x26, 0x27}, // [7] dark current mode; [6:4] BLK smooth speed; [3:2] BLK row select mode; [1] dark current en; [0] offset en;
+  {0x28, 0x7f}, // BLK limit
+  {0x29, 0x00}, // global offset
+  {0x32, 0x04}, // 04 darkc
+  {0x33, 0x18}, // blk ratio
+  {0x34, 0x18},
+  {0x35, 0x18},
+  {0x36, 0x18},
 
-  {0x3b, 0x04}, //manual oset
-  {0x3c, 0x04},
-  {0x3d, 0x04},
-  {0x3e, 0x04},
+  {0x3b, 0x00}, // manual R1 offset
+  {0x3c, 0x00}, // manual G1 offset
+  {0x3d, 0x00}, // manual G2 offset
+  {0x3e, 0x00}, // manual B2 offset
 /////////////},///////ISP BLOCK ENABLE////////////////////
   {0x40, 0xff},
   {0x41, 0x24},//[5]skin detection
   {0x42, 0xfa},//disable ABS
-  {0x46, 0x37},//Synchronize signal output mode
+  {0x46, 0x32},//Synchronize signal output mode
   {0x4b, 0xcb}, //[1] AWB_gain_mode, [0] more boundary mode
   {0x4d, 0x01},
 	// crop
-	/* ((((WINDOW_HEIGHT - IMG_HEIGHT) >> 1) / SUB_SAMPLE_HEIGHT) >> 8) & 0x01 */
-	/* (((WINDOW_HEIGHT - IMG_HEIGHT) >> 1) / SUB_SAMPLE_HEIGHT) & 0xFF */
-	/* ((((WINDOW_WIDTH - IMG_WIDTH) >> 1) / SUB_SAMPLE_WIDTH) >> 8) & 0x03 */
-	/* (((WINDOW_WIDTH - IMG_WIDTH) >> 1) / SUB_SAMPLE_WIDTH) & 0xFF */
-	/*
-	(((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1)
-	(((WINDOW_WIDTH / SUB_SAMPLE_WIDTH) - IMG_WIDTH) >> 1)
-	*/
-  {0x50, 0x01}, // [7:1] NA, [0] crop out window mode.0x00},
+  {0x50, 0x01}, // [7:1] NA, [0] crop out window mode.
 	{0x51, ((((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) >> 8) & 0x01}, // [1:0]Crop_win_y1[9:8], Bit[9]: 0 -> [8:0] is valid, forward; 1 -> [5:0] is valid, backward
 	{0x52, (((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) & 0xFF}, // Crop_win_y1[7:0]
 	{0x53, ((((WINDOW_WIDTH / SUB_SAMPLE_WIDTH) - IMG_WIDTH) >> 1) >> 8) & 0x03}, // [2:0]Crop_win_x1[10:8], Bit[10]: 0 -> [9:0] is valid, forward; 1 -> [3:0] is valid, backward
@@ -179,66 +172,66 @@ const unsigned char GC0329_CFG[][2] = {
 ////////////////////DNDD////////////////////
   {0x80, 0x07}, // 0xe7 20140915
   {0x81, 0xc2}, // 0x22 20140915
-  {0x82, 0x90}, //DN auto DNDD DEC DNDD //0e //55 jambo
+  {0x82, 0x90}, //DN auto DNDD DEC DNDD
   {0x83, 0x05},
   {0x87, 0x40}, //0x4a  20140915
 //////////////////INTPEE////////////////////
   {0x90, 0x8c}, //ac
   {0x92, 0x05},
   {0x94, 0x05},
-  {0x95, 0x45}, //0x44
-  {0x96, 0x88},
+	/* Edge effect */
+  {0x95, 0x44}, // edge1/2 effect, Controlled by user or ASDE
+  {0x96, 0x88}, //[7:4] positive edge ratio, 1.3bits [3:0] negative edge ratio, 1.3bits
+	{0x97, 0x81}, //[7:4] edge1 max [3:0] edge1 min
+	{0x98, 0x81}, //[7:4] edge2 max [3:0] edge2 min
+	{0x99, 0x22}, //[7:4] edge1 threshold [3:0] edge2 threshold
+	{0x9a, 0xff}, //[7:4] positive edge max [3:0] negative edge max
 ////////////////////ASDE////////////////////
 //	/*---------- Page 1 ----------*/
   {0xfe, 0x01}, //page select - 1
-  {0x18, 0x22},
+  {0x18, 0x05}, // AEC_luma_div [7:4] for AWB; [3:0] for ASDE
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
-  {0x9c, 0x0a},
-  {0xa0, 0xaf},
-  {0xa2, 0xff},
-  {0xa4, 0x30}, //50 jambo
+  {0x9c, 0x06},
+	{0x9e, 0xea},
+  {0xa0, 0x5f},
+  {0xa2, 0x12},
+  {0xa4, 0x10}, //auto saturation decrease slope
   {0xa5, 0x31}, //[7:4] auto saturation low limit, [3:0] sub saturation slope
   {0xa7, 0x60}, //ASDE low luminance value threshold
 ////////////////////RGB gamma////////////////////
-//	/*---------- Page 0 ----------*/
-//  {0xfe, 0x00}, //page select - 0
-  {0xbf, 0x0b},
-  {0xc0, 0x1d},
-  {0xc1, 0x33},
-  {0xc2, 0x49},
-  {0xc3, 0x5d},
-  {0xc4, 0x6e},
-  {0xc5, 0x7c},
-  {0xc6, 0x99},
-  {0xc7, 0xaf},
-  {0xc8, 0xc2},
-  {0xc9, 0xd0},
-  {0xca, 0xda},
-  {0xcb, 0xe2},
-  {0xcc, 0xe7},
-  {0xcd, 0xf0},
-  {0xce, 0xf7},
+  {0xbf, 0x10},
+  {0xc0, 0x20},
+  {0xc1, 0x38},
+  {0xc2, 0x4e},
+  {0xc3, 0x63},
+  {0xc4, 0x76},
+  {0xc5, 0x87},
+  {0xc6, 0xa2},
+  {0xc7, 0xb8},
+  {0xc8, 0xca},
+  {0xc9, 0xd8},
+  {0xca, 0xe3},
+  {0xcb, 0xe9},
+  {0xcc, 0xf0},
+  {0xcd, 0xf8},
+  {0xce, 0xfd},
   {0xcf, 0xff},
-////////////////////Y gamma////////////////////
-//	/*---------- Page 0 ----------*/
-//  {0xfe, 0x00}, //page select - 0
+////////////////////Y gamma//////////////////
   {0x63, 0x00},
-  {0x64, 0x06},
-  {0x65, 0x0d},
-  {0x66, 0x1b},
-  {0x67, 0x2b},
-  {0x68, 0x3d},
-  {0x69, 0x50},
-  {0x6a, 0x60},
-  {0x6b, 0x80},
-  {0x6c, 0xa0},
-  {0x6d, 0xc0},
-  {0x6e, 0xe0},
+  {0x64, 0x10},
+  {0x65, 0x1c},
+  {0x66, 0x30},
+  {0x67, 0x43},
+  {0x68, 0x54},
+  {0x69, 0x65},
+  {0x6a, 0x75},
+  {0x6b, 0x93},
+  {0x6c, 0xb0},
+  {0x6d, 0xcb},
+  {0x6e, 0xe6},
   {0x6f, 0xff},
 //////////////////CC///////////////////
-//	/*---------- Page 0 ----------*/
-//  {0xfe, 0x00}, //page select - 0
   {0xb3, 0x44},
   {0xb4, 0xfd},
   {0xb5, 0x02},
@@ -246,16 +239,15 @@ const unsigned char GC0329_CFG[][2] = {
   {0xb7, 0x48},
   {0xb8, 0xf0},
 ////////////////////YCP////////////////////
-//	/*---------- Page 0 ----------*/
-//  {0xfe, 0x00}, //page select - 0
-
   {0xd0, 0x40},
-  {0xd1, 0x28},
-  {0xd2, 0x28},
+  {0xd1, 0x40},
+  {0xd2, 0x40},
   /* luma contrast control */
   {0xd3, 0x80}, // luma_contrast, can be adjusted via contrast center
-  {0xd5, 0x00},
+	{0xd4, 0x80}, // Contrast center value
+  {0xd5, 0x00}, // Add offset on luma value
 
+	{0xd8, 0x28}, // Defines skin range
 	{0xd9, 0xe3}, // [7:4]skin grightness high threshold, [3:0]skin brightness low threshold
 	
   {0xdd, 0x14},
@@ -275,9 +267,7 @@ const unsigned char GC0329_CFG[][2] = {
   {0x3c, 0x50},
   {0x3d, 0x40},
   {0x3e, 0x45}, //read 3f for status
-////////////////////AWB////////////////////
-//	/*---------- Page 1 ----------*/
-//  {0xfe, 0x01}, //page select - 1
+////////////////////AWB//////////////////////
   {0x06, 0x12},
   {0x07, 0x06},
   {0x08, 0x9c},
@@ -339,13 +329,11 @@ const unsigned char GC0329_CFG[][2] = {
   {0x9c, 0x00},
   {0x9e, 0xc0},
   {0x9f, 0x40},
-////////////////////CC-AWB////////////////////
+////////////////////CC-AWB///////////////////
   {0xd0, 0x00},
   {0xd2, 0x2c},
   {0xd3, 0x80},
 ///////////////////LSC //////////////////////
-//	/*---------- Page 1 ----------*/
-//  {0xfe, 0x01}, //page select - 1
   {0xc0, 0x0b},
   {0xc1, 0x07},
   {0xc2, 0x05},
@@ -388,14 +376,10 @@ const unsigned char GC0329_CFG[][2] = {
   {0xa7, 0x00},
   {0xa1, 0x3c},
   {0xa2, 0x50},
-//	/*---------- Page 0 ----------*/
-//  {0xfe, 0x00}, //page select - 0
-//	/*---------- Page 1 ----------*/
-//  {0xfe, 0x01}, //page select - 1
   {0x29, 0x00}, //anti-flicker step [11:8]
   {0x2a, 0x96}, //anti-flicker step [7:0]
 /*
-	// windows(240 * 240), image(120 * 120)
+	// test on windows(240 * 240), image(120 * 120)
 	0x000 -> 59.5243Hz
 	0x100 -> 59.5243Hz
 	0x1ac -> 50.0672Hz
@@ -421,15 +405,13 @@ const unsigned char GC0329_CFG[][2] = {
 	/*---------- Page 0 ----------*/
   {0xfe, 0x00}, //page select - 0
 ////////////////////out ///////////////////
-//  {0x44, 0xa2},
-	{0x43, 0x00},
+	{0x43, 0x00}, // [1] CbCr fixed enable; [0] Inverse color
 	{0x44, 0x00 | IMG_FORMAT}, //output format: only Y
 //	{0x4e, 0x09},
   {0xf0, 0x07}, //pclk_en && hsync_en && vsync_en
   {0xf1, 0x01}, //normal data output enable
 	{0xf3, 0xa8}, //sync & pclk & data -> pull up, PWDN_DN -> pull down.
 	{0xf5, 0x00}, //rec_bandwidth
-//	{0xfa, 0x00}, //frequency division number
 };
 
 /**

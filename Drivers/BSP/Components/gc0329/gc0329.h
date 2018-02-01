@@ -52,6 +52,10 @@
 #define  GC0329_ID         0x62
 
 #define GC0329_DEVICE_ADDR 0x62
+
+#define ACTIVE_IMG_ARRAY_WIDTH        648
+#define ACTIVE_IMG_ARRAY_HEIGHT       488
+
 /**
   * @brief  GC0329 Registers
   */
@@ -59,8 +63,8 @@
 /* GC0329 Registers definition */
 #define GC0329_SENSOR_ID_REG           0xFB
 
-#define WINDOW_WIDTH                   640
-#define WINDOW_HEIGHT                  480
+#define WINDOW_WIDTH                   120
+#define WINDOW_HEIGHT                  120
 
 #define IMG_WIDTH                      120
 #define IMG_HEIGHT                     120
@@ -72,6 +76,9 @@
 
 #define SUB_SAMPLE_WIDTH               __CAM_LIMIT(2, SUB_SAMPLE_WIDTH_MIN, SUB_SAMPLE_WIDTH_MAX)
 #define SUB_SAMPLE_HEIGHT              __CAM_LIMIT(2, SUB_SAMPLE_HEIGHT_MIN, SUB_SAMPLE_HEIGHT_MAX)
+
+#define COL_START_OFFSET               ((ACTIVE_IMG_ARRAY_WIDTH - WINDOW_WIDTH) >> 1)
+#define ROW_START_OFFSET               ((ACTIVE_IMG_ARRAY_HEIGHT - WINDOW_HEIGHT) >> 1)
 
 /**
   * @}
