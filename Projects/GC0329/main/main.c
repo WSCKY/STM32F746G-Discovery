@@ -33,7 +33,7 @@ static uint8_t ImageUpdateFlag = 0;
 uint32_t millis = 0, img_t = 0, last_millis = 0;
 uint32_t _cnt_x = 0, _cnt_y = 0;
 
-uint32_t d1 = 0, d2 = 0, d3 = 0, last_d1 = 0, last_d2 = 0, last_d3 = 0;
+//uint32_t d1 = 0, d2 = 0, d3 = 0, last_d1 = 0, last_d2 = 0, last_d3 = 0;
 /* Global extern variables ---------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
@@ -88,8 +88,8 @@ int main(void)
 
 	BSP_LCD_DrawRect(ORG_IMG_POS_X - 1, ORG_IMG_POS_Y - 1, IMG_WIDTH + 1, IMG_HEIGHT + 1);
 
-	BSP_CAMERA_ContinuousStart((uint8_t *)CameraImgBuffer, (IMG_WIDTH * IMG_HEIGHT) >> 2);
-//	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, (IMG_WIDTH * IMG_HEIGHT) >> 2);        
+//	BSP_CAMERA_ContinuousStart((uint8_t *)CameraImgBuffer, (IMG_WIDTH * IMG_HEIGHT) >> 2);
+	BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, (IMG_WIDTH * IMG_HEIGHT) >> 2);
 
   while(1)
   {
@@ -106,14 +106,14 @@ int main(void)
 			}
 
 			BSP_LED_Toggle(LED1);
-//			BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, (IMG_WIDTH * IMG_HEIGHT) >> 2);
+			BSP_CAMERA_SnapshotStart((uint8_t *)CameraImgBuffer, (IMG_WIDTH * IMG_HEIGHT) >> 2);
 		}
-		if(d1 != last_d1 || d2 != last_d2 || d3 != last_d3) {
-			BSP_CAMERA_Suspend();
-			BSP_CAMERA_Config(d3, d1, d2);
-			BSP_CAMERA_Resume();
-			last_d1 = d1, last_d2 = d2; last_d3 = d3;
-		}
+//		if(d1 != last_d1 || d2 != last_d2 || d3 != last_d3) {
+//			BSP_CAMERA_Suspend();
+//			BSP_CAMERA_Config(d3, d1, d2);
+//			BSP_CAMERA_Resume();
+//			last_d1 = d1, last_d2 = d2; last_d3 = d3;
+//		}
   }
 }
 
@@ -164,7 +164,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLN = 400;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   HAL_RCC_OscConfig(&RCC_OscInitStruct);
-          
+
   ret = HAL_PWREx_EnableOverDrive();
 
   if(ret != HAL_OK)
