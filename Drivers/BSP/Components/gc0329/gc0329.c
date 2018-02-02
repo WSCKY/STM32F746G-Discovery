@@ -91,7 +91,7 @@ const unsigned char GC0329_CFG[][2] = {
 	{0x71, 0x40}, //Controlled by AEC, can be manually controlled when disable AEC
 	{0x72, 0x40}, //Controlled by AEC, can be manually controlled when disable AEC
   {0x03, 0x00}, //Exposure[11:8], use line processing time as unit.
-  {0x04, 0x96}, //Exposure[7:0], controlled by AEC if AEC is in function
+  {0x04, 0x66}, //Exposure[7:0], controlled by AEC if AEC is in function
 	{0x73, 0x80}, //R channel pre gain, 1.7 bits
   {0x74, 0x80}, //G1 channel pre gain, 1.7 bits
   {0x75, 0x80}, //G2 channel pre gain, 1.7 bits
@@ -113,10 +113,10 @@ const unsigned char GC0329_CFG[][2] = {
 	{0x0f, ((WINDOW_WIDTH + 8) >> 8) & 0x03}, //window width high 2 bit
 	{0x10, (WINDOW_WIDTH + 8) & 0xFF}, //window width low 8 bit
 	{0x11, 0x2a}, //sh_delay, default: 0x2a
-	{0x12, 0x04}, //Vs_st, number of Row time from frame start to first HSYNC valid, default: 0x04
-	{0x13, 0x04}, //Vs_et, number of Row time from last HSYNC valid to frame end Notice the relation with VB, VB > vs_st+vs_et, default: 0x04
+	{0x12, 0x06}, //Vs_st, number of Row time from frame start to first HSYNC valid, default: 0x04
+	{0x13, 0x06}, //Vs_et, number of Row time from last HSYNC valid to frame end Notice the relation with VB, VB > vs_st+vs_et, default: 0x04
 
-  {0x17, 0x83}, //[7] HSYNC always; [5:4] CFA sequence; [3:2] dark CFA sequence; [1] Updown (y-axis/height swap); [0] mirror (x-axis/width swap);
+  {0x17, 0x80 | (COLUMN_FLIP << 1) | ROW_FLIP}, //[7] HSYNC always; [5:4] CFA sequence; [3:2] dark CFA sequence; [1] Updown (y-axis/height swap); [0] mirror (x-axis/width swap);
   {0x19, 0x05}, //Reserved
   {0x1b, 0x24},
   {0x1c, 0x04},
@@ -128,7 +128,7 @@ const unsigned char GC0329_CFG[][2] = {
   {0x23, 0x22},
   {0x24, 0x3f},
 //////////////////blk////////////////////
-  {0x26, 0x27}, // [7] dark current mode; [6:4] BLK smooth speed; [3:2] BLK row select mode; [1] dark current en; [0] offset en;
+  {0x26, 0xf7}, // [7] dark current mode; [6:4] BLK smooth speed; [3:2] BLK row select mode; [1] dark current en; [0] offset en;
   {0x28, 0x7f}, // BLK limit
   {0x29, 0x00}, // global offset
   {0x32, 0x04}, // 04 darkc
@@ -141,17 +141,17 @@ const unsigned char GC0329_CFG[][2] = {
   {0x3c, 0x00}, // manual G1 offset
   {0x3d, 0x00}, // manual G2 offset
   {0x3e, 0x00}, // manual B2 offset
-/////////////},///////ISP BLOCK ENABLE////////////////////
+////////////////////ISP BLOCK ENABLE////////////////////
   {0x40, 0xff},
   {0x41, 0x24},//[5]skin detection
   {0x42, 0xfa},//disable ABS
-  {0x46, 0x32},//Synchronize signal output mode
-  {0x4b, 0xcb}, //[1] AWB_gain_mode, [0] more boundary mode
+  {0x46, 0x02},//Synchronize signal output mode
+  {0x4b, 0xca}, //[1] AWB_gain_mode, [0] more boundary mode
   {0x4d, 0x01},
 	// crop
   {0x50, 0x01}, // [7:1] NA, [0] crop out window mode.
-	{0x51, ((((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) >> 8) & 0x01}, // [1:0]Crop_win_y1[9:8], Bit[9]: 0 -> [8:0] is valid, forward; 1 -> [5:0] is valid, backward
-	{0x52, (((WINDOW_HEIGHT / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) & 0xFF}, // Crop_win_y1[7:0]
+	{0x51, (((((WINDOW_HEIGHT + 16) / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) >> 8) & 0x01}, // [1:0]Crop_win_y1[9:8], Bit[9]: 0 -> [8:0] is valid, forward; 1 -> [5:0] is valid, backward
+	{0x52, ((((WINDOW_HEIGHT + 16) / SUB_SAMPLE_HEIGHT) - IMG_HEIGHT) >> 1) & 0xFF}, // Crop_win_y1[7:0]
 	{0x53, ((((WINDOW_WIDTH / SUB_SAMPLE_WIDTH) - IMG_WIDTH) >> 1) >> 8) & 0x03}, // [2:0]Crop_win_x1[10:8], Bit[10]: 0 -> [9:0] is valid, forward; 1 -> [3:0] is valid, backward
 	{0x54, (((WINDOW_WIDTH / SUB_SAMPLE_WIDTH) - IMG_WIDTH) >> 1) & 0xFF}, // Crop_win_x1[7:0]
   {0x55, (IMG_HEIGHT >> 8) & 0x01}, //out window height[8]
@@ -377,7 +377,7 @@ const unsigned char GC0329_CFG[][2] = {
   {0xa1, 0x3c},
   {0xa2, 0x50},
   {0x29, 0x00}, //anti-flicker step [11:8]
-  {0x2a, 0x96}, //anti-flicker step [7:0]
+  {0x2a, 0xa0}, //anti-flicker step [7:0]
 /*
 	// test on windows(240 * 240), image(120 * 120)
 	0x000 -> 59.5243Hz
@@ -392,14 +392,14 @@ const unsigned char GC0329_CFG[][2] = {
 	0x400 -> 20.9265Hz
 	0x42f -> 20.0082Hz
 	*/
-  {0x2b, 0x01}, //exp level 0  50fps
-  {0x2c, 0xac},
+  {0x2b, 0x02}, //exp level 0  50fps
+  {0x2c, 0x18},
   {0x2d, 0x02}, //exp level 1  40fps
-  {0x2e, 0x18},
-  {0x2f, 0x02}, //exp level 2  30fps
-  {0x30, 0xca},
-  {0x31, 0x04}, //exp level 3  20fps
-  {0x32, 0x2f},
+  {0x2e, 0xca},
+  {0x2f, 0x04}, //exp level 2  30fps
+  {0x30, 0x2f},
+  {0x31, 0x05}, //exp level 3  20fps
+  {0x32, 0x20},
 	{0x33, 0x21}, //[5:4] Max level setting, [3:0] exp_min[11:8]
 	{0x34, 0x00}, //exp_min[7:0]
 	/*---------- Page 0 ----------*/
@@ -410,8 +410,8 @@ const unsigned char GC0329_CFG[][2] = {
 //	{0x4e, 0x09},
   {0xf0, 0x07}, //pclk_en && hsync_en && vsync_en
   {0xf1, 0x01}, //normal data output enable
-	{0xf3, 0xa8}, //sync & pclk & data -> pull up, PWDN_DN -> pull down.
-	{0xf5, 0x00}, //rec_bandwidth
+//	{0xf3, 0xa8}, //sync & pclk & data -> pull up, PWDN_DN -> pull down.
+//	{0xf5, 0x00}, //rec_bandwidth
 };
 
 /**
@@ -459,9 +459,15 @@ void gc0329_Config(uint16_t DeviceAddr, uint32_t feature, uint32_t value, uint32
 {
 	CAMERA_IO_Write(DeviceAddr, 0x51, (value >> 8) & 0x01);
 	CAMERA_IO_Write(DeviceAddr, 0x52, value & 0xFF);
-	CAMERA_IO_Write(DeviceAddr, 0x53, (brightness_value >> 8) & 0x03);
-	CAMERA_IO_Write(DeviceAddr, 0x54, brightness_value & 0xFF);
-	CAMERA_IO_Write(DeviceAddr, 0x59, feature & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x53, (value >> 24) & 0x03);
+	CAMERA_IO_Write(DeviceAddr, 0x54, (value >> 16) & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x05, (brightness_value >> 16) & 0x03);
+	CAMERA_IO_Write(DeviceAddr, 0x06, (brightness_value >> 8) & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x11, brightness_value & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x07, (feature >> 24) & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x08, (feature >> 16) & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x12, (feature >> 8) & 0xFF);
+	CAMERA_IO_Write(DeviceAddr, 0x13, feature & 0xFF);
 }
 
 /**

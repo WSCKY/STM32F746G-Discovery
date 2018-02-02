@@ -63,11 +63,14 @@
 /* GC0329 Registers definition */
 #define GC0329_SENSOR_ID_REG           0xFB
 
-#define WINDOW_WIDTH                   120
-#define WINDOW_HEIGHT                  120
+#define WINDOW_WIDTH                   240
+#define WINDOW_HEIGHT                  240
 
 #define IMG_WIDTH                      120
 #define IMG_HEIGHT                     120
+
+#define COLUMN_FLIP                    (1)
+#define ROW_FLIP                       (1)
 
 #define SUB_SAMPLE_WIDTH_MIN           (1)
 #define SUB_SAMPLE_HEIGHT_MIN          (1)
