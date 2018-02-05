@@ -273,7 +273,7 @@ void BSP_CAMERA_PwrUp(void)
   /* Configure DCMI GPIO as alternate function */
   gpio_init_structure.Pin       = GPIO_PIN_13;
   gpio_init_structure.Mode      = GPIO_MODE_OUTPUT_PP;
-  gpio_init_structure.Pull      = GPIO_NOPULL;
+  gpio_init_structure.Pull      = GPIO_PULLUP;//GPIO_NOPULL;
   gpio_init_structure.Speed     = GPIO_SPEED_HIGH;
   HAL_GPIO_Init(GPIOH, &gpio_init_structure);
 
@@ -298,7 +298,7 @@ void BSP_CAMERA_PwrDown(void)
   /* Configure DCMI GPIO as alternate function */
   gpio_init_structure.Pin       = GPIO_PIN_13;
   gpio_init_structure.Mode      = GPIO_MODE_OUTPUT_PP;
-  gpio_init_structure.Pull      = GPIO_NOPULL;
+  gpio_init_structure.Pull      = GPIO_PULLUP;//GPIO_NOPULL;
   gpio_init_structure.Speed     = GPIO_SPEED_HIGH;
   HAL_GPIO_Init(GPIOH, &gpio_init_structure);
 
