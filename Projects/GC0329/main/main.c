@@ -104,8 +104,8 @@ int main(void)
 			uint32_t d = 0;
 			for(i = 0; i < IMG_HEIGHT; i ++) {
 				for(j = 0; j < IMG_WIDTH; j ++) {
-					d = CameraImgBuffer[i][j];
-					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((ORG_IMG_POS_Y + i) * 480) + ORG_IMG_POS_X + j) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);
+					d = CameraImgBuffer[j][i];
+					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((ORG_IMG_POS_Y + j) * 480) + ORG_IMG_POS_X + i) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);
 				}
 			}
 
