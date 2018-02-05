@@ -33,6 +33,7 @@ static uint8_t ImageUpdateFlag = 0;
 uint32_t millis = 0, img_t = 0, last_millis = 0;
 uint32_t _cnt_x = 0, _cnt_y = 0;
 
+GPIO_PinState last_state = GPIO_PIN_RESET;
 uint8_t cap_new = 0;
 uint32_t d1 = 0, d2 = 0x00006a2a, d3 = 0x00700404, last_d1 = 0, last_d2 = 0x00006a2a, last_d3 = 0x00700404;
 /* Global extern variables ---------------------------------------------------*/
@@ -60,6 +61,7 @@ int main(void)
   SystemClock_Config();
 
   BSP_LED_Init(LED1);
+	BSP_PB_Init(BUTTON_KEY, BUTTON_MODE_GPIO);
 	MCU_TIMs_Init();
   /* Initialize the LCD */
   BSP_LCD_Init();
@@ -104,6 +106,13 @@ int main(void)
 				for(j = 0; j < IMG_WIDTH; j ++) {
 					d = CameraImgBuffer[i][j];
 					*(__IO uint32_t*)(LCD_FRAME_BUFFER + ((((ORG_IMG_POS_Y + i) * 480) + ORG_IMG_POS_X + j) << 2)) = 0xFF000000 | (d << 16) | (d << 8) | (d);
+				}
+			}
+
+			if(BSP_PB_GetState(BUTTON_KEY) != last_state) {
+				last_state = BSP_PB_GetState(BUTTON_KEY);
+				if(last_state == GPIO_PIN_RESET) {
+					cap_new = 1;
 				}
 			}
 
